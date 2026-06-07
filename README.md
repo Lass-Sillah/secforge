@@ -1,88 +1,69 @@
-# SECFORGE — SY0-701 PBQ Trainer
+# SECFORGE
 
-A Progressive Web App for CompTIA Security+ SY0-701 performance-based question (PBQ) training. Styled as a roguelike terminal/hacker game.
+> **Live:** https://lass-sillah.github.io/secforge/
 
-## What's Inside
+A browser-based training tool for the CompTIA Security+ SY0-701 exam, focused on the performance-based questions (PBQs) that show up in the actual test. Built to feel like a terminal game rather than a flashcard app.
 
-Seven game modules, all accessible from the hub:
+---
 
-| Game | PBQ Type | Domains |
-|------|----------|---------|
-| PORT MASTER | Protocol ↔ port mapping, secure replacements | 3 & 4 |
-| FIREWALL FORGE | Drag-to-order ruleset builder (top-down first-match-wins) | 3 & 4 |
-| LOG HUNTER | Click the suspicious IoC in real log output | 2 & 4 |
-| ATTACK MATCH | Drag-match attacks to descriptions | 2 |
-| INCIDENT ORDER | Order IR lifecycle + forensic Order of Volatility | 4 & 5 |
-| ACCESS CONTROL | MAC / DAC / RBAC / ABAC scenario classification | 1 & 4 |
-| CRYPTO SELECT | Match use cases to algorithms, flag deprecated ones | 3 |
+## What it is
 
-## Roguelike Engine
+Most Security+ prep tools drill you on multiple choice. PBQs are different — they put you in a scenario and make you *do* something: order firewall rules, identify the suspicious log entry, place servers in the right network zone. SECFORGE trains exactly those skills.
 
-Every game runs on the same engine:
+11 game modules, each covering a different PBQ category from the SY0-701 exam objectives:
 
-- **E → D → C → B → A → S** rank ladder
-- Stack = fixed set of questions; must clear **FLAWLESSLY** (zero misses) to rank up
-- One wrong answer resets the stack to the top with reshuffled options
-- Per-card countdown timer (tighter at higher ranks)
-- Combo multiplier feeds score
-- **Review Mode**: step through answered cards (read-only) while the live card's timer pauses; RESUME returns to the game
+| Module | What you do |
+|--------|-------------|
+| **PORT MASTER** | Match protocols to their ports and identify secure replacements |
+| **FIREWALL FORGE** | Drag ACL rules into the correct top-down order — first match wins |
+| **NET ZONES** | Place servers and services into DMZ, Internal LAN, or Secure Zone |
+| **LOG HUNTER** | Read real-looking log output and click the suspicious indicator |
+| **ATTACK MATCH** | Match attack names to their descriptions |
+| **INCIDENT ORDER** | Sequence the IR lifecycle (PICERL) and forensic Order of Volatility |
+| **ACCESS CONTROL** | Classify MAC / DAC / RBAC / ABAC scenarios; apply least privilege and SoD |
+| **CRYPTO SELECT** | Pick the right algorithm for each use case; flag deprecated ones |
+| **PKI LAB** | Choose cert types, diagnose cert issues from a mock viewer, sequence TLS 1.2 |
+| **WIRELESS CONFIG** | Select the correct WPA version or EAP method for enterprise scenarios |
+| **HARDEN TARGET** | Audit a server or cloud config and flag every misconfiguration |
 
-## Local Development
+---
+
+## How it plays
+
+Each module runs on a roguelike progression system:
+
+- **Rank ladder:** E → D → C → B → A → S
+- **Stack:** a set of questions for the current rank — you must clear it **with zero mistakes** to rank up
+- **One wrong answer** resets you to the top of the same stack with reshuffled options — no skipping ahead
+- **Timer:** each rank has a tighter countdown per card
+- **Combo multiplier** rewards consecutive correct answers
+- **Review mode:** step through your answered cards mid-run without losing your place
+
+Progress and scores save automatically to your browser's local storage.
+
+---
+
+## Domain coverage
+
+| Domain | Weight | Coverage |
+|--------|--------|----------|
+| D1 — General Security Concepts | 12% | Access Control (models + principles) |
+| D2 — Threats, Vulns & Mitigations | 22% | Attack Match (40+ attacks), Log Hunter (14 IoC scenarios) |
+| D3 — Security Architecture | 18% | Firewall Forge, Net Zones, PKI Lab, Crypto Select, Wireless Config, Port Master |
+| D4 — Security Operations | 28% | Log Hunter, Incident Order, Harden Target |
+| D5 — Program Management | 20% | Governance / compliance (primarily MC, not PBQ) |
+
+---
+
+## Tech
+
+React + Vite + TypeScript. Tailwind CSS v4. Zustand for persistent state. PWA — works offline after first load. Zero backend; everything runs in the browser.
+
+---
+
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
-
-Open http://localhost:5173 (or the port Vite selects).
-
-## Production Build
-
-```bash
-npm run build
-```
-
-Output in `dist/`. The app is offline-capable via a Workbox service worker.
-
-## Deploy to GitHub Pages
-
-1. Install the deploy helper (one-time):
-   ```bash
-   npm install --save-dev gh-pages
-   ```
-
-2. Add your repo URL to `package.json` → `"homepage"`:
-   ```json
-   "homepage": "https://<your-github-username>.github.io/secforge"
-   ```
-
-3. Deploy:
-   ```bash
-   npm run deploy
-   ```
-
-The `vite.config.ts` already sets `base: '/secforge/'` for correct asset paths.
-
-## Tech Stack
-
-- **React 18** + **Vite** + **TypeScript**
-- **Tailwind CSS v4** (via `@tailwindcss/vite`)
-- **Zustand** for state management (persisted to `localStorage`)
-- **React Router v6** (HashRouter for GitHub Pages compat)
-- **vite-plugin-pwa** + Workbox service worker
-- **JetBrains Mono** font via `@fontsource`
-- Zero backend — everything runs client-side
-
-## Adding Questions
-
-Each game reads from a typed data file in `src/data/`:
-
-- `src/data/ports.ts` — PORT MASTER question pool
-- `src/data/firewall.ts` — FIREWALL FORGE scenarios
-- `src/data/logs.ts` — LOG HUNTER log scenarios
-- `src/data/attacks.ts` — ATTACK MATCH attack entries
-- `src/data/incidents.ts` — INCIDENT ORDER step lists
-- `src/data/accessControl.ts` — ACCESS CONTROL scenarios
-- `src/data/crypto.ts` — CRYPTO SELECT use cases + algorithm list
-
-All types are defined in `src/types/index.ts`.
