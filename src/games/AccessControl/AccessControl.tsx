@@ -6,7 +6,7 @@ import {
   MenuScreen, PlayHUD, ReviewScreen, FailedScreen, LevelUpScreen, VictoryScreen, ExplainBanner, GameOverScreen,
 } from '../../components/engine/RoguelikeLayout'
 import { useGameStore } from '../../store/gameStore'
-import { AC_SCENARIOS, AC_MODELS, AC_PRINCIPLE_SCENARIOS, AC_ZERO_TRUST_SCENARIOS, type ACModel } from '../../data/accessControl'
+import { AC_SCENARIOS, AC_MODELS, AC_PRINCIPLE_SCENARIOS, AC_ZERO_TRUST_SCENARIOS, AC_FEDERATION_SCENARIOS, type ACModel } from '../../data/accessControl'
 
 const GAME_ID   = 'access-control'
 const GAME_NAME = 'ACCESS CONTROL'
@@ -29,6 +29,13 @@ const MODEL_COLORS: Record<string, string> = {
   'Just-in-Time (JIT) / Privileged Access Management (PAM)': 'var(--c-violet)',
   'Zero Trust (microsegmentation / mutual TLS)':             'var(--c-cyan)',
   'Network Segmentation (traditional)':  'var(--c-dim)',
+  'SAML (Security Assertion Markup Language)': 'var(--c-amber)',
+  'OAuth 2.0':                           'var(--c-orange)',
+  'OIDC (OpenID Connect)':               'var(--c-green)',
+  'RADIUS (Remote Authentication Dial-In User Service)': 'var(--c-pink)',
+  'LDAP (Lightweight Directory Access Protocol)': 'var(--c-blue)',
+  'TACACS+':                             'var(--c-dim)',
+  'Kerberos':                            'var(--c-dim)',
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -43,7 +50,7 @@ function generateStack(rank: Rank): MultipleChoiceQuestion[] {
   if (RANKS.indexOf(rank) >= 2) {
     // Ranks C+ get a principle or Zero Trust scenario
     const pool = RANKS.indexOf(rank) >= 4
-      ? shuffle([...AC_PRINCIPLE_SCENARIOS, ...AC_ZERO_TRUST_SCENARIOS])
+      ? shuffle([...AC_PRINCIPLE_SCENARIOS, ...AC_ZERO_TRUST_SCENARIOS, ...AC_FEDERATION_SCENARIOS])
       : shuffle([...AC_PRINCIPLE_SCENARIOS])
     const p = pool[0]
     const options: string[] = shuffle([p.correctPrinciple, ...p.distractors])

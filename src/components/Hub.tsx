@@ -23,14 +23,14 @@ const GAMES: GameMeta[] = [
   { id: 'attack-match',    name: 'ATTACK MATCH',     subtitle: 'Match attacks to their descriptions',                   domains: 'Domain 2',     route: '/attack-match',    color: 'var(--c-pink)',   icon: '◎' },
   { id: 'incident-order',  name: 'INCIDENT ORDER',   subtitle: 'Sequence IR phases (PICERL) & Order of Volatility',   domains: 'Domain 4 & 5', route: '/incident-order',  color: 'var(--c-violet)', icon: '◆' },
   // Row 3 — Identity & crypto
-  { id: 'access-control',  name: 'ACCESS CONTROL',   subtitle: 'MAC vs DAC vs RBAC vs ABAC scenarios',                domains: 'Domain 1 & 4', route: '/access-control',  color: 'var(--c-blue)',   icon: '◇' },
+  { id: 'access-control',  name: 'ACCESS CONTROL',   subtitle: 'MAC/DAC/RBAC/ABAC + Zero Trust, JIT/PAM, SAML, OAuth, OIDC, RADIUS, LDAP', domains: 'Domain 1 & 4', route: '/access-control',  color: 'var(--c-blue)',   icon: '◇' },
   { id: 'crypto-select',   name: 'CRYPTO SELECT',    subtitle: 'Match use cases to algorithms; flag deprecated',       domains: 'Domain 3',     route: '/crypto-select',   color: 'var(--c-green)',  icon: '⬡' },
   { id: 'pki-lab',         name: 'PKI LAB',          subtitle: 'Cert types, cert issues, TLS handshake sequence',      domains: 'Domain 3',     route: '/pki-lab',         color: 'var(--c-violet)', icon: '⬢' },
   // Row 4 — Wireless & hardening
   { id: 'wireless-config', name: 'WIRELESS CONFIG',  subtitle: 'WPA2/WPA3, EAP-TLS, PEAP, 802.1X — pick the right one', domains: 'Domain 3',  route: '/wireless-config', color: 'var(--c-cyan)',   icon: '◈' },
   { id: 'harden-target',   name: 'HARDEN TARGET',    subtitle: 'Audit running services; flag every misconfiguration',  domains: 'Domain 3 & 4', route: '/harden-target',   color: 'var(--c-orange)', icon: '◉' },
   // Row 5 — Domain 5 & Acronyms
-  { id: 'compliance-grid', name: 'COMPLIANCE GRID',  subtitle: 'GRC scenarios: risk formulas, GDPR/HIPAA/SOX, NIST/ISO frameworks, RTO/RPO/BCP/DR', domains: 'Domain 5', route: '/compliance-grid', color: 'var(--c-amber)', icon: '◧' },
+  { id: 'compliance-grid', name: 'COMPLIANCE GRID',  subtitle: 'GRC + cloud: risk formulas, GDPR/HIPAA/SOX, NIST/ISO, BCP/DR, pen testing, IaaS/PaaS/SaaS, SLA/MOU/SBOM, data states', domains: 'Domain 2 3 5', route: '/compliance-grid', color: 'var(--c-amber)', icon: '◧' },
   { id: 'acro-flip',       name: 'ACRO FLIP',        subtitle: 'Match boards + fill-in-the-blank — master every SY0-701 acronym', domains: 'All Domains', route: '/acro-flip', color: 'var(--c-violet)', icon: '◑' },
 ]
 
@@ -45,11 +45,11 @@ const ASCII_BANNER = `
 // Bars = SECLITE's PBQ coverage of each domain's exam-relevant content
 // Exam domain weights: D1=12% D2=22% D3=18% D4=28% D5=20%
 const DOMAIN_COVERAGE = [
-  { domain: 'Domain 1 (12%) — General Security Concepts',        pct: 55,  color: 'var(--c-blue)',   note: 'AccessControl: models + least privilege / SoD' },
-  { domain: 'Domain 2 (22%) — Threats, Vulns & Mitigations',     pct: 80,  color: 'var(--c-pink)',   note: 'AttackMatch (40 attacks) + LogHunter (14 IoC scenarios)' },
-  { domain: 'Domain 3 (18%) — Security Architecture',            pct: 90,  color: 'var(--c-cyan)',   note: 'FirewallForge, NetZones, PKI Lab, Crypto, Wireless, Ports' },
-  { domain: 'Domain 4 (28%) — Security Operations',              pct: 75,  color: 'var(--c-green)',  note: 'LogHunter, IncidentOrder, HardenTarget — largest exam domain' },
-  { domain: 'Domain 5 (20%) — Program Management & Oversight',   pct: 75,  color: 'var(--c-violet)', note: 'ComplianceGrid: risk formulas, GRC frameworks, regulations, BCP/DR' },
+  { domain: 'Domain 1 (12%) — General Security Concepts',        pct: 75,  color: 'var(--c-blue)',   note: 'AccessControl + HardenTarget: deception tech, honeypots, change mgmt, control models' },
+  { domain: 'Domain 2 (22%) — Threats, Vulns & Mitigations',     pct: 88,  color: 'var(--c-pink)',   note: 'AttackMatch + LogHunter + ComplianceGrid: pen testing phases, CVSS, supply chain' },
+  { domain: 'Domain 3 (18%) — Security Architecture',            pct: 90,  color: 'var(--c-cyan)',   note: 'FirewallForge, NetZones, PKI Lab, Crypto, Wireless, Ports + Cloud/CASB/SASE/data states' },
+  { domain: 'Domain 4 (28%) — Security Operations',              pct: 85,  color: 'var(--c-green)',  note: 'LogHunter + HardenTarget (SPF/DKIM/DMARC) + AccessControl (SAML/OAuth/OIDC/RADIUS/LDAP)' },
+  { domain: 'Domain 5 (20%) — Program Management & Oversight',   pct: 85,  color: 'var(--c-violet)', note: 'ComplianceGrid: risk, frameworks, regulations, BCP/DR, third-party risk, SLA/MOU/SBOM' },
 ]
 
 export function Hub() {
@@ -154,7 +154,7 @@ export function Hub() {
             PBQ COVERAGE — SY0-701
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '6px 24px' }}>
-            {['Ports & Protocols', 'Firewall / ACL Rules', 'Network Zone Placement', 'Log Analysis / IoC', 'Attack Identification', 'Incident Response (PICERL)', 'Order of Volatility', 'Access Control Models', 'Cryptography Selection', 'PKI / Certificate Types', 'TLS Handshake Sequence', 'Wireless Security (WPA/EAP)', 'Server & Endpoint Hardening', 'Risk Formulas (SLE/ALE/ARO)', 'GRC Frameworks (NIST/ISO/CIS/SOC2)', 'Regulations (GDPR/HIPAA/SOX/PCI)', 'BCP/DR (RTO/RPO/MTTR/RAID/Backups)', 'SY0-701 Acronyms (Match + Fill-in)'].map((t) => (
+            {['Ports & Protocols', 'Firewall / ACL Rules', 'Network Zone Placement', 'Log Analysis / IoC', 'Attack Identification', 'Incident Response (PICERL)', 'Order of Volatility', 'Access Control Models (MAC/DAC/RBAC/ABAC)', 'Zero Trust / JIT / PAM', 'SAML / OAuth 2.0 / OIDC / RADIUS / LDAP', 'Cryptography Selection + AES Modes', 'PKI / Certificate Types', 'TLS Handshake Sequence', 'Wireless Security (WPA/EAP)', 'Server & Endpoint Hardening', 'SPF / DKIM / DMARC Email Security', 'Deception Tech (Honeypots / Sinkholes)', 'Risk Formulas (SLE/ALE/ARO)', 'GRC Frameworks (NIST CSF 2.0/ISO/CIS/SOC2)', 'Regulations (GDPR/HIPAA/SOX/PCI-DSS)', 'BCP/DR (RTO/RPO/MTTR/RAID/Backups)', 'Pen Testing Phases + CVSS Scoring', 'Cloud Architecture (IaaS/PaaS/SaaS/CASB/SASE)', 'Third-Party Risk (SLA/MOU/NDA/SBOM/Supply Chain)', 'Data States + Tokenization vs Masking', 'Change Management (CAB/Maintenance Windows)', 'SY0-701 Acronyms (Match + Fill-in)'].map((t) => (
               <span key={t} style={{ color: 'var(--c-dim)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: 'var(--c-green)', fontSize: 10 }}>✓</span> {t}
               </span>

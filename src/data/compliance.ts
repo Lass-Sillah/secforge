@@ -7,6 +7,9 @@ export type ComplianceCategory =
   | 'bcdr'
   | 'policy'
   | 'data'
+  | 'pentesting'
+  | 'cloud'
+  | 'thirdparty'
 
 export interface ComplianceQuestion extends MultipleChoiceQuestion {
   category: ComplianceCategory
@@ -370,6 +373,255 @@ const AWARENESS: ComplianceQuestion[] = [
   },
 ]
 
+// ─── PENETRATION TESTING & VULNERABILITY MANAGEMENT ──────────────────────────
+
+const PENTESTING: ComplianceQuestion[] = [
+  {
+    id: 'cg-pt-01', kind: 'multiple-choice', category: 'pentesting', difficulty: 'easy',
+    prompt: 'A penetration tester gathers publicly available information about a target company using LinkedIn, WHOIS, job postings, and Google — without touching any company systems. Which phase of a pen test is this?',
+    options: ['Passive reconnaissance', 'Active reconnaissance', 'Scanning', 'Exploitation'],
+    correctIndex: 0,
+    explanation: 'Passive reconnaissance collects information about the target without directly interacting with its systems. Sources include OSINT (open-source intelligence): WHOIS records, DNS lookups on public resolvers, LinkedIn employee profiles, job postings (reveal tech stack), Google dorking, Shodan. No traffic reaches the target. Active reconnaissance involves directly interacting with the target (port scanning, banner grabbing) — this can be detected and may require explicit authorization.',
+  },
+  {
+    id: 'cg-pt-02', kind: 'multiple-choice', category: 'pentesting', difficulty: 'easy',
+    prompt: 'A security team runs a vulnerability scan and finds that a patch management server is flagged as "vulnerable to Heartbleed (CVE-2014-0160)." Upon manual verification, the server is running a version of OpenSSL released after the patch. What is this finding called?',
+    options: ['False positive', 'False negative', 'True positive', 'True negative'],
+    correctIndex: 0,
+    explanation: 'A false positive is when a vulnerability scanner reports a vulnerability that does not actually exist. The scanner\'s fingerprinting logic matched the banner or version number pattern associated with the vulnerability, but the actual patch is already applied. False positives waste analyst time and reduce confidence in scanning tools. Credentialed scans (using valid credentials to log in and check patch levels) produce significantly fewer false positives than uncredentialed scans.',
+  },
+  {
+    id: 'cg-pt-03', kind: 'multiple-choice', category: 'pentesting', difficulty: 'easy',
+    prompt: 'A vulnerability scan is run with valid domain credentials, allowing the scanner to log into each host and directly inspect installed patches, software versions, and configuration settings. What type of scan is this?',
+    options: ['Credentialed (authenticated) scan', 'Uncredentialed (unauthenticated) scan', 'Active reconnaissance', 'Passive scan'],
+    correctIndex: 0,
+    explanation: 'A credentialed (authenticated) scan uses valid login credentials to access each target and inspect it from the inside — checking actual patch levels, installed software, configuration settings, and registry keys. Results are far more accurate and produce fewer false positives than uncredentialed scans, which can only infer vulnerability from externally visible banners and version numbers. Credentialed scans are preferred for internal compliance and hardening assessments. The trade-off: credentials must be managed and stored securely.',
+  },
+  {
+    id: 'cg-pt-04', kind: 'multiple-choice', category: 'pentesting', difficulty: 'medium',
+    prompt: 'A vulnerability is assigned a CVSS base score of 9.8 (Critical). The organization has compensating controls in place that reduce exploitability — no direct internet access to the affected system, and network-level authentication is required. After adjusting for environment, the effective score is 6.5 (Medium). Which CVSS score should be used for patch prioritization?',
+    options: ['Environmental score (6.5) — it reflects actual risk in this environment', 'Base score (9.8) — always prioritize by base score regardless of controls', 'Temporal score — it accounts for exploit maturity', 'Neither — CVSS should not be used for prioritization'],
+    correctIndex: 0,
+    explanation: 'CVSS has three score groups: Base (inherent vulnerability characteristics — worst case), Temporal (factors that change over time: exploit availability, patch status), and Environmental (organization-specific factors: compensating controls, asset importance, network exposure). Patch prioritization should use the environmental score when compensating controls genuinely reduce exploitability. A 9.8 on an air-gapped, internally-accessed system is not the same risk as a 9.8 on a public-facing web server. However, document the compensating controls formally — they create the obligation to patch if controls are ever removed.',
+  },
+  {
+    id: 'cg-pt-05', kind: 'multiple-choice', category: 'pentesting', difficulty: 'medium',
+    prompt: 'Before a pen test begins, the client and testing firm sign a document that defines the scope of systems to be tested, the testing window (dates/times), which techniques are permitted (e.g., no DoS attacks), emergency contacts, and legal authorization. What is this document called?',
+    options: ['Rules of Engagement (RoE)', 'Statement of Work (SoW)', 'Memorandum of Understanding (MoU)', 'Non-Disclosure Agreement (NDA)'],
+    correctIndex: 0,
+    explanation: 'Rules of Engagement (RoE) define the operational boundaries of a penetration test: which systems are in scope, which are explicitly out of scope, what attack techniques are permitted, testing hours (to avoid impacting production), and escalation/emergency contacts if something goes wrong. RoE is the primary document protecting the tester from criminal liability — it is the written authorization to attack specific systems. An NDA protects sensitive information; a SoW defines deliverables and costs. Both may accompany a pen test but neither replaces the RoE.',
+  },
+  {
+    id: 'cg-pt-06', kind: 'multiple-choice', category: 'pentesting', difficulty: 'medium',
+    prompt: 'A pen test team successfully exploits a web server, gains a foothold, then pivots through the internal network to compromise a domain controller. They create a backdoor persistence mechanism and document the full attack path. Which pen test phase involves creating persistence and pivoting to additional targets after initial access?',
+    options: ['Post-exploitation', 'Exploitation', 'Scanning', 'Reporting'],
+    correctIndex: 0,
+    explanation: 'Post-exploitation occurs after initial access is gained. It includes: privilege escalation (gaining higher-level access), lateral movement (pivoting to other systems), establishing persistence (backdoors, scheduled tasks, new accounts), data exfiltration (collecting target data), and maintaining access for continued testing. This phase demonstrates the true blast radius of a successful compromise. The phases of a pen test: Planning → Reconnaissance → Scanning/Enumeration → Exploitation → Post-Exploitation → Reporting.',
+  },
+  {
+    id: 'cg-pt-07', kind: 'multiple-choice', category: 'pentesting', difficulty: 'medium',
+    prompt: 'A software development team runs automated tools that analyze the source code of their application without executing it, looking for injection flaws, hard-coded credentials, and insecure cryptographic function calls. What type of analysis is this?',
+    options: ['Static code analysis (SAST)', 'Dynamic analysis (DAST)', 'Fuzzing', 'Penetration testing'],
+    correctIndex: 0,
+    explanation: 'Static Application Security Testing (SAST) analyzes source code, bytecode, or binaries without executing the application — "white box" testing from the inside. It can find injection flaws, hard-coded secrets, insecure API calls, and logic errors in pre-production. Dynamic Application Security Testing (DAST) tests a running application from the outside (black box), sending inputs and observing behavior — it can find runtime vulnerabilities SAST misses. Modern DevSecOps pipelines use both: SAST in the IDE/build pipeline, DAST in staging/QA environments.',
+  },
+  {
+    id: 'cg-pt-08', kind: 'multiple-choice', category: 'pentesting', difficulty: 'hard',
+    prompt: 'An organization discovers CVE-2024-12345 in their web application framework — CVSS base score 7.5 (High). A public exploit exists (temporal factor). The affected system processes credit card transactions and is internet-facing (environmental factor). In what order should the security team work through this finding?',
+    options: ['Identify → Analyze → Prioritize → Remediate → Verify', 'Scan → Exploit → Report → Patch', 'Patch → Verify → Document → Close', 'Assess → Accept → Transfer → Avoid'],
+    correctIndex: 0,
+    explanation: 'The vulnerability management lifecycle: (1) Identify — discover the vulnerability (scanner, CVE feed, vendor bulletin); (2) Analyze — confirm it applies to your environment, assess false positive risk, determine actual exploitability; (3) Prioritize — use CVSS environmental score + business context (internet-facing, payment card data = treat as Critical regardless of base score); (4) Remediate — apply patch, implement compensating control, or accept risk with documentation; (5) Verify — re-scan to confirm remediation, close the finding. Document exceptions formally. This lifecycle matches NIST SP 800-40 and appears as a PBQ scenario on SY0-701.',
+  },
+  {
+    id: 'cg-pt-09', kind: 'multiple-choice', category: 'pentesting', difficulty: 'hard',
+    prompt: 'A pen test team receives no information about the target environment before testing begins — no network diagrams, no credentials, no system inventory. They must enumerate the environment from scratch using only external access. What type of pen test is this?',
+    options: ['Black box (blind) test', 'White box (crystal box) test', 'Gray box test', 'Red team exercise'],
+    correctIndex: 0,
+    explanation: 'Black box (blind) testing simulates an external attacker with no prior knowledge of the target. Testers must perform all reconnaissance and enumeration independently. It provides the most realistic simulation of an external threat actor, but is less efficient (more time spent on recon). White box testing gives testers full knowledge (network diagrams, credentials, source code) — most thorough coverage but doesn\'t simulate realistic attacker conditions. Gray box is a hybrid — some information provided (maybe network ranges, one set of credentials). Red team exercises are long-duration, multi-phase black box engagements that test detection and response, not just prevention.',
+  },
+]
+
+// ─── CLOUD ARCHITECTURE & SHARED RESPONSIBILITY ───────────────────────────────
+
+const CLOUD: ComplianceQuestion[] = [
+  {
+    id: 'cg-cl-01', kind: 'multiple-choice', category: 'cloud', difficulty: 'easy',
+    prompt: 'A company runs their application on AWS EC2 instances. AWS manages the physical data center, network infrastructure, and hypervisor. The company manages the OS, application code, and data. Which cloud model is this?',
+    options: ['IaaS (Infrastructure as a Service)', 'PaaS (Platform as a Service)', 'SaaS (Software as a Service)', 'FaaS (Function as a Service)'],
+    correctIndex: 0,
+    explanation: 'IaaS (Infrastructure as a Service) provides virtualized compute, storage, and networking. The cloud provider manages: physical hardware, data center facilities, network infrastructure, and hypervisor. The customer manages: OS, middleware, runtime, application, and data. Examples: AWS EC2, Azure VMs, Google Compute Engine. Shared responsibility boundary: customer owns everything from the OS upward. PaaS adds the OS/runtime management (customer only manages app and data). SaaS means the provider manages everything; customer only manages configuration and user access.',
+  },
+  {
+    id: 'cg-cl-02', kind: 'multiple-choice', category: 'cloud', difficulty: 'easy',
+    prompt: 'A development team deploys their application to Heroku. They write code, configure the app settings, and manage their database. Heroku manages the OS patching, runtime updates, and server infrastructure. Which cloud service model applies?',
+    options: ['PaaS (Platform as a Service)', 'IaaS (Infrastructure as a Service)', 'SaaS (Software as a Service)', 'On-premises'],
+    correctIndex: 0,
+    explanation: 'PaaS (Platform as a Service) provides a managed platform for developers to build and deploy applications without managing underlying infrastructure or OS. The provider manages: physical hardware, network, OS, runtime, and middleware. The customer manages: application code and data. Examples: Heroku, Google App Engine, AWS Elastic Beanstalk, Azure App Service. The shared responsibility boundary shifts further toward the provider than IaaS. Developers gain speed (no OS patching) at the cost of less control over the environment.',
+  },
+  {
+    id: 'cg-cl-03', kind: 'multiple-choice', category: 'cloud', difficulty: 'easy',
+    prompt: 'An organization uses Microsoft 365 for email, Teams for communication, and SharePoint for document management. Their IT team only manages user accounts, licenses, and data sharing policies — no servers or software installation required. Which model is this?',
+    options: ['SaaS (Software as a Service)', 'PaaS (Platform as a Service)', 'IaaS (Infrastructure as a Service)', 'Hybrid cloud'],
+    correctIndex: 0,
+    explanation: 'SaaS (Software as a Service) delivers complete applications over the internet. The provider manages everything: hardware, network, OS, runtime, application code, and updates. The customer manages only: user accounts, access permissions, and data within the application. Examples: Microsoft 365, Google Workspace, Salesforce, Dropbox, ServiceNow. Security responsibility for the customer is minimal but still exists: access controls (MFA, conditional access), data classification within the platform, and preventing misconfigured sharing permissions.',
+  },
+  {
+    id: 'cg-cl-04', kind: 'multiple-choice', category: 'cloud', difficulty: 'medium',
+    prompt: 'Under the cloud shared responsibility model, which of the following is ALWAYS the customer\'s responsibility regardless of whether the deployment is IaaS, PaaS, or SaaS?',
+    options: ['Identity and access management (user accounts and permissions)', 'OS patching', 'Physical server security', 'Network infrastructure maintenance'],
+    correctIndex: 0,
+    explanation: 'Identity and access management (IAM) — who can access the cloud environment and what they can do — is always the customer\'s responsibility in all cloud service models. Even in SaaS, the customer must manage user accounts, MFA enrollment, role assignments, and offboarding. Other items shift: OS patching is customer-managed in IaaS, provider-managed in PaaS/SaaS. Physical security and network infrastructure are always the provider\'s responsibility. Data classification and protection is also always the customer\'s responsibility (though the tools are shared).',
+  },
+  {
+    id: 'cg-cl-05', kind: 'multiple-choice', category: 'cloud', difficulty: 'medium',
+    prompt: 'A security architect wants to enforce data loss prevention, visibility into shadow IT, and access policies for all cloud applications used by employees — including unsanctioned SaaS tools discovered through traffic analysis. Which security control is designed for this purpose?',
+    options: ['CASB (Cloud Access Security Broker)', 'SASE (Secure Access Service Edge)', 'SD-WAN', 'WAF (Web Application Firewall)'],
+    correctIndex: 0,
+    explanation: 'A CASB (Cloud Access Security Broker) acts as a security policy enforcement point between users and cloud services. Key capabilities: (1) Visibility — discover all cloud apps in use, including shadow IT; (2) Compliance — enforce DLP policies, audit logs, data residency; (3) Data security — classify and protect data in cloud services; (4) Threat protection — detect anomalous access patterns and account compromise. CASBs can be deployed as a proxy (inline) or via API integration with sanctioned SaaS apps. SASE combines SD-WAN with security services including CASB, SWG, and ZTNA in a cloud-delivered model.',
+  },
+  {
+    id: 'cg-cl-06', kind: 'multiple-choice', category: 'cloud', difficulty: 'medium',
+    prompt: 'An organization is replacing its MPLS WAN with a cloud-delivered security architecture that combines SD-WAN with cloud-based security services (SWG, CASB, ZTNA, FWaaS) in a single vendor platform. What architecture is this?',
+    options: ['SASE (Secure Access Service Edge)', 'Zero Trust Network Access (ZTNA)', 'SD-WAN only', 'VPN with split tunneling'],
+    correctIndex: 0,
+    explanation: 'SASE (Secure Access Service Edge, pronounced "sassy") is a cloud-native architecture that converges WAN networking (SD-WAN) and security (SWG — Secure Web Gateway, CASB, ZTNA — Zero Trust Network Access, FWaaS — Firewall as a Service) into a single cloud-delivered platform. Traffic is routed to the nearest cloud PoP for inspection and policy enforcement, rather than backhauling to a corporate data center. Benefits: consistent security for remote users, reduced latency, simplified management, Zero Trust model baked in. CompTIA SY0-701 explicitly lists SASE as an architecture to know.',
+  },
+  {
+    id: 'cg-cl-07', kind: 'multiple-choice', category: 'cloud', difficulty: 'hard',
+    prompt: 'A company stores EU customer data in AWS us-east-1 (Virginia, USA). A GDPR compliance officer raises concerns. What is the specific GDPR issue and the correct resolution?',
+    options: ['Data sovereignty violation — EU personal data transferred to US requires SCCs or adequacy decision; move data to EU region or implement transfer mechanisms', 'No issue — GDPR allows any cloud provider to process data globally', 'The issue is encryption — GDPR requires AES-256 specifically for US transfers', 'The company must use a European cloud provider only'],
+    correctIndex: 0,
+    explanation: 'Data sovereignty refers to the principle that data is subject to the laws of the country/region where it is stored. GDPR restricts transfer of EU personal data to third countries (including the US) unless: (1) the destination country has an EU adequacy decision, (2) appropriate safeguards are in place (Standard Contractual Clauses — SCCs), or (3) the data subject has explicitly consented. The US-EU Data Privacy Framework (2023) provides an adequacy mechanism, but organizations must self-certify. The safest technical solution is to store EU customer data in an EU AWS region (eu-west-1/Frankfurt/Stockholm). Data sovereignty is distinct from data residency (where data is stored) and data localization (legal requirement to store data locally).',
+  },
+  {
+    id: 'cg-cl-08', kind: 'multiple-choice', category: 'cloud', difficulty: 'hard',
+    prompt: 'A serverless function (AWS Lambda) processes payment data. The function has an IAM role with AdministratorAccess attached. A security review flags this. What is the correct principle to apply and what specific change should be made?',
+    options: ['Least privilege — replace AdministratorAccess with a custom policy granting only the specific S3 bucket and DynamoDB table the function actually accesses', 'Defense in depth — add a WAF in front of the Lambda function', 'Fail secure — configure the function to fail closed if authorization fails', 'Shared responsibility — this is the cloud provider\'s responsibility to manage'],
+    correctIndex: 0,
+    explanation: 'Lambda functions with AdministratorAccess can perform any AWS action in the account — if the function is compromised (via injection in event data, dependency confusion, etc.), the attacker gets full account access. Least privilege requires scoping the IAM role to exactly what the function needs: specific S3 PutObject on a specific bucket, specific DynamoDB actions on a specific table. This is cloud IAM hardening. The shared responsibility model places IAM configuration firmly in the customer\'s responsibility regardless of cloud model. This is a common PBQ scenario in SY0-701 cloud architecture questions.',
+  },
+]
+
+// ─── THIRD-PARTY RISK & VENDOR MANAGEMENT ────────────────────────────────────
+
+const THIRDPARTY: ComplianceQuestion[] = [
+  {
+    id: 'cg-tp-01', kind: 'multiple-choice', category: 'thirdparty', difficulty: 'easy',
+    prompt: 'A company outsources its help desk to a managed service provider. The contract defines specific uptime guarantees (99.9%), maximum response times, and financial penalties if performance targets are missed. What type of document is this?',
+    options: ['Service Level Agreement (SLA)', 'Memorandum of Understanding (MOU)', 'Non-Disclosure Agreement (NDA)', 'Master Service Agreement (MSA)'],
+    correctIndex: 0,
+    explanation: 'An SLA (Service Level Agreement) is a contractual commitment defining measurable service standards: uptime percentages, response times, resolution times, and financial penalties (credits/refunds) for non-compliance. SLAs are legally binding and appear in vendor contracts, cloud service agreements, and outsourcing deals. Key SLA security metrics: RTO/RPO commitments, incident notification timelines, audit rights. MOU is a less formal document expressing intent to cooperate, often between government entities. MSA establishes the overall business relationship; SLAs are typically attachments to an MSA.',
+  },
+  {
+    id: 'cg-tp-02', kind: 'multiple-choice', category: 'thirdparty', difficulty: 'easy',
+    prompt: 'Before sharing proprietary technical specifications with a potential partner during due diligence, a company requires the partner to sign a legal agreement preventing disclosure of the shared information to third parties. What document is this?',
+    options: ['Non-Disclosure Agreement (NDA)', 'Service Level Agreement (SLA)', 'Master Service Agreement (MSA)', 'Business Associate Agreement (BAA)'],
+    correctIndex: 0,
+    explanation: 'An NDA (Non-Disclosure Agreement), also called a Confidentiality Agreement, is a legal contract that prohibits a party from sharing confidential information received during negotiations, partnerships, or employment. NDAs protect trade secrets, proprietary technology, business plans, and customer data. They can be mutual (both parties protect each other\'s information) or one-sided. NDAs are typically signed before any sensitive information is shared — during initial vendor evaluation, partnership discussions, or M&A due diligence. Breach of NDA can result in injunctive relief and damages.',
+  },
+  {
+    id: 'cg-tp-03', kind: 'multiple-choice', category: 'thirdparty', difficulty: 'medium',
+    prompt: 'Two government agencies agree to share threat intelligence data and coordinate cybersecurity incident response. The document they sign outlines the general intent, shared goals, and each party\'s responsibilities but is not a legally enforceable contract. What type of document is this?',
+    options: ['Memorandum of Understanding (MOU)', 'Service Level Agreement (SLA)', 'Non-Disclosure Agreement (NDA)', 'Interconnection Security Agreement (ISA)'],
+    correctIndex: 0,
+    explanation: 'An MOU (Memorandum of Understanding) expresses a mutual agreement and intent to cooperate between parties. It is not a legally binding contract in most jurisdictions — it establishes shared goals and responsibilities at a high level. MOUs are common between government agencies, non-profits, and organizations where a formal contract isn\'t appropriate. An ISA (Interconnection Security Agreement) is a more specific document used when two organizations connect their IT systems — it defines technical and security requirements for that interconnection. If legal enforceability matters, an SLA or formal contract is needed instead.',
+  },
+  {
+    id: 'cg-tp-04', kind: 'multiple-choice', category: 'thirdparty', difficulty: 'medium',
+    prompt: 'A company contracts with a SaaS vendor. The security team insists on including a clause that allows the company to send its own auditors to review the vendor\'s security controls, audit logs, and data handling practices at any time. What is this clause called?',
+    options: ['Right-to-audit clause', 'SLA breach clause', 'Business Associate Agreement', 'Vendor security questionnaire'],
+    correctIndex: 0,
+    explanation: 'A right-to-audit clause contractually grants the customer the ability to conduct security assessments, inspections, or reviews of the vendor\'s environment and processes. It is a critical third-party risk management control because it provides ongoing assurance that the vendor maintains promised security posture. Without it, organizations must rely solely on vendor-provided evidence (SOC 2 reports, questionnaire responses). Right-to-audit is especially important in regulated industries (financial, healthcare) where the organization remains responsible for vendor security even when functions are outsourced.',
+  },
+  {
+    id: 'cg-tp-05', kind: 'multiple-choice', category: 'thirdparty', difficulty: 'medium',
+    prompt: 'A software vendor provides a complete inventory of all open-source libraries, third-party components, and their versions used in their application. This allows the purchasing organization to identify if any component has a known CVE. What is this inventory called?',
+    options: ['SBOM (Software Bill of Materials)', 'CVE inventory', 'Vendor risk questionnaire', 'Configuration management database (CMDB)'],
+    correctIndex: 0,
+    explanation: 'An SBOM (Software Bill of Materials) is a structured inventory of all software components in an application — including open-source libraries, third-party dependencies, version numbers, and licensing. SBOMs became a US government requirement after Executive Order 14028 (2021) following the SolarWinds and Log4j incidents. With an SBOM, organizations can rapidly identify exposure when a new CVE is published (e.g., "Do we use log4j? Which products? Which versions?"). SBOMs are a key component of software supply chain security. CompTIA SY0-701 added SBOM explicitly to the exam objectives.',
+  },
+  {
+    id: 'cg-tp-06', kind: 'multiple-choice', category: 'thirdparty', difficulty: 'hard',
+    prompt: 'A company uses a widely deployed network monitoring software vendor. Attackers compromise the vendor\'s build pipeline and insert malicious code into a legitimate software update, which is then distributed to 18,000 customers. Customers who applied the update unknowingly installed the backdoor. What type of attack is this?',
+    options: ['Supply chain attack (software supply chain compromise)', 'Watering hole attack', 'Spear phishing campaign', 'Insider threat'],
+    correctIndex: 0,
+    explanation: 'A supply chain attack targets the software or hardware supply chain rather than the end organization directly. By compromising a trusted vendor\'s build process, attackers can distribute malicious code through legitimate, signed software updates. The SolarWinds SUNBURST attack (2020) is the canonical real-world example — attackers had access to SolarWinds\' Orion build environment for months, inserting a backdoor that was distributed as a legitimate update to ~18,000 organizations. Mitigations: SBOM validation, code signing verification, vendor risk assessments, monitoring for unexpected outbound connections from monitoring tools.',
+  },
+  {
+    id: 'cg-tp-07', kind: 'multiple-choice', category: 'thirdparty', difficulty: 'hard',
+    prompt: 'A healthcare organization\'s medical imaging software vendor announces End of Life (EOL) for a product version, meaning no more security patches will be released. The hospital cannot upgrade immediately due to compatibility with legacy imaging hardware. What risk and mitigating control applies?',
+    options: ['EOL/EOS risk — implement compensating controls (network segmentation, additional monitoring, WAF) and document the exception; upgrade is the long-term goal', 'The software is still safe since it was secure before EOL', 'Transfer the risk by requiring the vendor to continue patching under a special contract', 'Immediately decommission the system regardless of operational impact'],
+    correctIndex: 0,
+    explanation: 'End-of-Life (EOL) / End-of-Support (EOS) software no longer receives security patches, making any newly discovered vulnerabilities permanently unpatched. This creates unacceptable ongoing risk. When immediate replacement is not feasible (common in healthcare and OT/ICS environments), compensating controls are required: strict network segmentation (isolate the system on a VLAN with minimal access), enhanced monitoring for anomalous behavior, application whitelisting to prevent unauthorized processes, and formal risk acceptance documentation signed by senior leadership. The EOL date should trigger a remediation project with a hard deadline. SY0-701 tests this as third-party risk and vulnerability management.',
+  },
+]
+
+// ─── DATA STATES, CLASSIFICATION & PROTECTION ────────────────────────────────
+
+const DATA_PROTECTION: ComplianceQuestion[] = [
+  {
+    id: 'cg-dp-01', kind: 'multiple-choice', category: 'data', difficulty: 'easy',
+    prompt: 'A laptop containing customer records is stolen from a car. The data on the laptop\'s SSD is encrypted with BitLocker. Which data state does BitLocker protect, and does the encryption prevent unauthorized access?',
+    options: ['Data at rest — yes, BitLocker protects data when the device is powered off and the attacker cannot decrypt without the key', 'Data in transit — BitLocker encrypts data while being transmitted over Wi-Fi', 'Data in use — BitLocker protects data while the CPU is processing it', 'Data at rest — no, BitLocker can be bypassed by booting from a USB drive'],
+    correctIndex: 0,
+    explanation: 'Data at rest is stored data — on disk, database, USB drive, or tape — that is not currently being transmitted or processed. BitLocker (full-disk encryption) protects data at rest by encrypting the entire drive; without the decryption key (derived from TPM + PIN or recovery key), the data is unreadable even if the physical drive is removed. The three data states: at rest (stored), in transit (network transmission — protected by TLS/IPSec), and in use (being processed in memory — protected by secure enclaves, memory encryption). Each state requires different protection mechanisms.',
+  },
+  {
+    id: 'cg-dp-02', kind: 'multiple-choice', category: 'data', difficulty: 'easy',
+    prompt: 'A company replaces credit card numbers in its database with randomly generated tokens that have no mathematical relationship to the original number. The actual card numbers are stored in a separate, highly secured vault. When the token is presented for payment, the vault maps it back to the real number. What technique is this?',
+    options: ['Tokenization', 'Encryption', 'Masking', 'Hashing'],
+    correctIndex: 0,
+    explanation: 'Tokenization replaces sensitive data (credit card numbers, SSNs) with non-sensitive substitutes (tokens) that retain format but have no cryptographic or mathematical relationship to the original data. If the tokenized database is breached, the tokens are useless without the separate vault. PCI-DSS scope reduction is a primary use: systems that only see tokens are considered out-of-scope. Encryption transforms data mathematically using a key (reversible with the key). Masking displays partial data (****1234) for display purposes. Hashing is one-way — the original cannot be recovered (used for passwords, not for data that needs retrieval).',
+  },
+  {
+    id: 'cg-dp-03', kind: 'multiple-choice', category: 'data', difficulty: 'medium',
+    prompt: 'An HR portal displays employee SSNs as "***-**-6789" on screen. The full SSN is stored encrypted in the database. The display format is used to confirm identity. What data protection technique is the display layer using?',
+    options: ['Data masking', 'Tokenization', 'Encryption', 'Obfuscation'],
+    correctIndex: 0,
+    explanation: 'Data masking replaces sensitive data with a modified version for display or use in non-production environments, showing only enough for the intended purpose (last 4 digits to confirm identity). The underlying data is still stored securely (encrypted in this case). Static masking creates a permanent masked copy (used in dev/test databases so developers never see real PII). Dynamic masking applies masking at query/display time without changing stored data. Tokenization replaces data entirely with a random substitute that maps back to real data. Obfuscation is a broader term for making data difficult to understand (including masking, encryption, steganography).',
+  },
+  {
+    id: 'cg-dp-04', kind: 'multiple-choice', category: 'data', difficulty: 'medium',
+    prompt: 'A DLP solution is configured to scan all outbound email attachments for patterns matching credit card numbers and SSNs, and block or encrypt the message if found. Where in the data security model is this DLP deployed?',
+    options: ['Data in transit — DLP inspects data as it moves across the network/email gateway', 'Data at rest — DLP scans stored files on SharePoint', 'Data in use — DLP monitors clipboard activity on endpoints', 'All three states simultaneously'],
+    correctIndex: 0,
+    explanation: 'Data Loss Prevention (DLP) can be deployed across all three data states: (1) Data in transit — network/email DLP inspects traffic at the gateway, blocking or encrypting sensitive data before it leaves the organization; (2) Data at rest — endpoint/storage DLP scans files on file servers, SharePoint, and endpoints for misclassified sensitive data; (3) Data in use — endpoint DLP monitors clipboard operations, screen captures, USB transfers, and printing. Email gateway DLP (blocking outbound emails with PAN/SSN data) is a transit-state control. SY0-701 tests the ability to match a DLP scenario to its data state.',
+  },
+  {
+    id: 'cg-dp-05', kind: 'multiple-choice', category: 'data', difficulty: 'hard',
+    prompt: 'A company must sanitize 500 old hard drives before disposal. The drives contain medical records (PHI). Which method provides the STRONGEST assurance that data cannot be recovered, even by a forensics laboratory?',
+    options: ['Physical destruction (shredding or degaussing + shredding)', 'DOD 5220.22-M multi-pass wipe', 'Single-pass overwrite with zeros', 'DBAN (Darik\'s Boot and Nuke) secure erase'],
+    correctIndex: 0,
+    explanation: 'For guaranteed data destruction, especially for PHI under HIPAA, physical destruction is the gold standard: degaussing (strong magnetic field that destroys magnetic media data and the drive electronics) followed by shredding to prevent any recovery attempt. For SSDs and flash storage, degaussing is ineffective (not magnetic media) — shredding or incineration is required. Software-based wiping (DOD 5220.22-M, DBAN) is generally accepted for HDDs and meets NIST 800-88 guidelines for Clear/Purge levels. However, modern forensics can potentially recover data from partially overwritten HDDs. Physical destruction provides NIST 800-88 "Destroy" level assurance — irrecoverable under any circumstances. For drives with PII/PHI, most HIPAA auditors require certificates of destruction.',
+  },
+]
+
+// ─── CHANGE MANAGEMENT & GOVERNANCE ──────────────────────────────────────────
+
+const CHANGE_MGMT: ComplianceQuestion[] = [
+  {
+    id: 'cg-cm-01', kind: 'multiple-choice', category: 'policy', difficulty: 'easy',
+    prompt: 'A system administrator wants to update a firewall rule to allow a new application. Before making the change, they must submit a detailed form describing the change, its risk, rollback plan, and get approval from a committee. This committee reviews all proposed changes to production systems. What is this committee called?',
+    options: ['Change Advisory Board (CAB)', 'Security Operations Committee', 'Risk Acceptance Board', 'Configuration Management Team'],
+    correctIndex: 0,
+    explanation: 'The Change Advisory Board (CAB) is a governance body that reviews, evaluates, and approves changes to IT systems before they are implemented. CAB members typically include IT operations, security, business stakeholders, and management. CAB controls: (1) prevents unauthorized changes, (2) ensures rollback plans exist, (3) schedules changes during maintenance windows to minimize impact, and (4) reduces configuration drift. Emergency changes may bypass full CAB review using an Emergency CAB (ECAB) or pre-authorized emergency change process, but still require documentation after the fact.',
+  },
+  {
+    id: 'cg-cm-02', kind: 'multiple-choice', category: 'policy', difficulty: 'medium',
+    prompt: 'During an investigation into a production outage, the security team finds that a developer directly modified a database schema in production at 2 AM on a Sunday — outside business hours, with no change ticket or approval. This is an example of which security issue?',
+    options: ['Unauthorized change / change management failure', 'Insider threat — deliberate sabotage', 'Configuration drift — systems diverging from baseline over time', 'Lack of separation of duties'],
+    correctIndex: 0,
+    explanation: 'Unauthorized changes — modifications made without following the change management process — are a primary cause of production outages and security incidents. Even well-intentioned changes made outside the process can introduce vulnerabilities, break compliance baselines, and create configurations that are impossible to audit. Maintenance windows define pre-approved time periods for changes (typically low-traffic hours with stakeholder notification). Changes outside maintenance windows without emergency approval violate change management policy. Configuration drift (gradual divergence from baseline) is a related issue but describes the cumulative effect of uncontrolled changes over time, not a single unauthorized event.',
+  },
+  {
+    id: 'cg-cm-03', kind: 'multiple-choice', category: 'policy', difficulty: 'medium',
+    prompt: 'A change request is submitted for a critical security patch for a zero-day vulnerability being actively exploited in the wild. The normal CAB review cycle takes 2 weeks. What type of change process should be invoked?',
+    options: ['Emergency change process — bypasses normal CAB review with expedited approval and mandatory post-change documentation', 'Standard change — the 2-week process cannot be shortened for any reason', 'The patch should be applied immediately without any documentation to minimize exposure time', 'Risk acceptance — document the risk and wait for the normal change cycle'],
+    correctIndex: 0,
+    explanation: 'Emergency change processes allow expedited approval for critical, time-sensitive changes (actively exploited vulnerabilities, service-impacting incidents). Emergency changes typically require: verbal or email approval from a designated authority (ECAB or specific managers), immediate implementation, and mandatory post-change documentation (change record created after the fact). The key: emergency changes still require SOME authorization — they aren\'t unauthorized changes. Applying patches without any documentation or approval (even emergency approval) creates audit gaps and compliance violations. SY0-701 tests the distinction between authorized emergency changes and unauthorized changes.',
+  },
+]
+
 // ─── FULL POOL ─────────────────────────────────────────────────────────────────
 
 // Remove the broken question
@@ -383,6 +635,11 @@ export const ALL_COMPLIANCE_QUESTIONS: ComplianceQuestion[] = [
   ...POLICY,
   ...DATA_ROLES,
   ...AWARENESS,
+  ...PENTESTING,
+  ...CLOUD,
+  ...THIRDPARTY,
+  ...DATA_PROTECTION,
+  ...CHANGE_MGMT,
 ]
 
 export const COMPLIANCE_BY_DIFFICULTY = {
@@ -392,19 +649,25 @@ export const COMPLIANCE_BY_DIFFICULTY = {
 }
 
 export const CATEGORY_LABELS: Record<ComplianceCategory, string> = {
-  risk:       'RISK MANAGEMENT',
-  framework:  'FRAMEWORKS',
-  regulation: 'REGULATIONS',
-  bcdr:       'BCP / DR',
-  policy:     'POLICY & GOVERNANCE',
-  data:       'DATA ROLES',
+  risk:        'RISK MANAGEMENT',
+  framework:   'FRAMEWORKS',
+  regulation:  'REGULATIONS',
+  bcdr:        'BCP / DR',
+  policy:      'POLICY & GOVERNANCE',
+  data:        'DATA PROTECTION',
+  pentesting:  'PEN TESTING & VULNS',
+  cloud:       'CLOUD ARCHITECTURE',
+  thirdparty:  'THIRD-PARTY RISK',
 }
 
 export const CATEGORY_COLORS: Record<ComplianceCategory, string> = {
-  risk:       'var(--c-pink)',
-  framework:  'var(--c-blue)',
-  regulation: 'var(--c-amber)',
-  bcdr:       'var(--c-green)',
-  policy:     'var(--c-violet)',
-  data:       'var(--c-cyan)',
+  risk:        'var(--c-pink)',
+  framework:   'var(--c-blue)',
+  regulation:  'var(--c-amber)',
+  bcdr:        'var(--c-green)',
+  policy:      'var(--c-violet)',
+  data:        'var(--c-cyan)',
+  pentesting:  'var(--c-orange)',
+  cloud:       'var(--c-green)',
+  thirdparty:  'var(--c-pink)',
 }

@@ -13,7 +13,7 @@ import {
 
 const GAME_ID   = 'compliance-grid'
 const GAME_NAME = 'COMPLIANCE GRID'
-const DESC      = 'Domain 5 GRC — scenario-based MCQs covering risk management (SLE/ALE/ARO formulas), regulatory compliance (GDPR, HIPAA, PCI-DSS, SOX), security frameworks (NIST CSF, ISO 27001, CIS, CMMC), BCP/DR planning (RTO, RPO, RAID, backup types), and data governance roles.'
+const DESC      = 'GRC + Architecture scenarios — risk formulas (SLE/ALE/ARO), regulations (GDPR/HIPAA/PCI-DSS/SOX), frameworks (NIST CSF/ISO 27001/CIS), BCP/DR, pen testing phases, CVSS scoring, cloud shared responsibility (IaaS/PaaS/SaaS/CASB/SASE), third-party risk (SLA/MSA/MOU/SBOM/supply chain), data states (at rest/in transit/in use), tokenization vs masking, and change management.'
 
 const TIMER: Record<string, number> = { E: 0, D: 0, C: 60, B: 50, A: 40, S: 30 }
 const STACK: Record<string, number> = { E: 4, D: 5, C: 6, B: 7, A: 8, S: 10 }

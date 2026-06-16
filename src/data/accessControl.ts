@@ -81,6 +81,44 @@ export const AC_ZERO_TRUST_SCENARIOS: ACPrincipleScenario[] = [
   },
 ]
 
+export const AC_FEDERATION_SCENARIOS: ACPrincipleScenario[] = [
+  {
+    id: 'fed-01',
+    situation: 'Employees of a company log into a third-party HR SaaS platform using their existing corporate Active Directory credentials. The corporate identity provider authenticates the user and sends a digitally signed assertion to the HR platform, which grants access without storing a separate password. Which protocol enables this federated SSO?',
+    correctPrinciple: 'SAML (Security Assertion Markup Language)',
+    explanation: 'SAML 2.0 is the dominant enterprise SSO federation protocol. The Identity Provider (IdP — your company\'s AD/ADFS) authenticates the user and issues a signed XML assertion. The Service Provider (SP — the HR SaaS) trusts the assertion and grants access. Three roles: IdP (authenticates), SP (provides service), and user. SAML is authentication-focused and designed for web browser SSO in enterprise environments. Key exam trap: SAML is for authentication/SSO — not authorization delegation. OAuth 2.0 handles authorization (delegating access to resources). OIDC adds an authentication layer on top of OAuth.',
+    distractors: ['OAuth 2.0', 'RADIUS', 'Kerberos'],
+  },
+  {
+    id: 'fed-02',
+    situation: 'A mobile app asks users to "Continue with Google." When the user clicks, they are redirected to Google, authenticate there, and Google sends the app a token that allows the app to access the user\'s Google Drive files on their behalf — without the app ever seeing the user\'s Google password. Which protocol is this?',
+    correctPrinciple: 'OAuth 2.0',
+    explanation: 'OAuth 2.0 is an authorization framework — it delegates access to resources without sharing credentials. The user authorizes an application to act on their behalf. Key actors: Resource Owner (user), Client (mobile app), Authorization Server (Google), Resource Server (Google Drive API). OAuth issues an access token the app uses to call the API. Critical exam distinction: OAuth 2.0 is for authorization (what can this app do?), NOT authentication (who is this user?). To add authentication to OAuth, you layer OIDC on top. Using OAuth alone does NOT prove who the user is — it only proves they authorized the app.',
+    distractors: ['SAML (Security Assertion Markup Language)', 'LDAP', 'OIDC (OpenID Connect)'],
+  },
+  {
+    id: 'fed-03',
+    situation: 'An application needs to verify the identity of users logging in with their Google accounts. After the user authenticates with Google, the app receives an ID token — a signed JSON object (JWT) containing the user\'s name, email, and a unique identifier. The app uses this to create a user session. Which protocol extends OAuth 2.0 to provide identity information?',
+    correctPrinciple: 'OIDC (OpenID Connect)',
+    explanation: 'OpenID Connect (OIDC) is an identity layer built on top of OAuth 2.0. While OAuth 2.0 provides an access token for authorization, OIDC adds an ID token (a JWT — JSON Web Token) that contains identity claims (sub, name, email, iss, exp). The ID token proves who the user is; the access token proves what the app can do. OIDC is the modern standard for authentication in consumer and enterprise apps. Exam mnemonic: OAuth = authorization (access resources), OIDC = authentication (identity of the user). Almost all modern "Sign in with Google/Apple/Microsoft" buttons use OIDC.',
+    distractors: ['SAML (Security Assertion Markup Language)', 'OAuth 2.0', 'RADIUS'],
+  },
+  {
+    id: 'fed-04',
+    situation: 'When a network engineer connects to a Cisco switch via SSH and enters their credentials, the switch forwards the credentials to a central server that validates them against a shared user database. The same server controls VPN access, Wi-Fi authentication (802.1X), and dial-up access. What protocol is the central authentication server using?',
+    correctPrinciple: 'RADIUS (Remote Authentication Dial-In User Service)',
+    explanation: 'RADIUS (RFC 2865) is an AAA (Authentication, Authorization, Accounting) protocol widely used for network access control. It centralizes authentication for: VPNs, 802.1X wired/wireless, dial-up, and network device management. RADIUS uses UDP (ports 1812/1813 or legacy 1645/1646). Encryption: only the password field is encrypted in the request packet (the rest is cleartext). TACACS+ (Cisco proprietary) is an alternative that encrypts the entire packet and is preferred for device administration. Key distinction: RADIUS is for network access (users accessing the network); LDAP is for directory lookups (applications querying user attributes). RADIUS attributes can come from Active Directory via LDAP.',
+    distractors: ['LDAP', 'SAML (Security Assertion Markup Language)', 'TACACS+'],
+  },
+  {
+    id: 'fed-05',
+    situation: 'A web application needs to look up whether a user is a member of the "Finance-Approvers" Active Directory group before granting access to the payment approval module. The app queries the company\'s domain controller using port 389, sending the user\'s username and receiving their group memberships, department, email, and phone number. Which protocol is the application using?',
+    correctPrinciple: 'LDAP (Lightweight Directory Access Protocol)',
+    explanation: 'LDAP (Lightweight Directory Access Protocol, RFC 4511) is a protocol for reading and writing directory services — such as Active Directory (AD) or OpenLDAP. Applications use LDAP to: authenticate users, look up group memberships, retrieve user attributes (email, department, phone), and query organizational structure. LDAP uses port 389 (cleartext) and 636 (LDAPS — LDAP over TLS, encrypted). LDAPS should always be used in production. LDAP is NOT an authentication protocol itself — it is a directory access protocol used in authentication flows. The distinction: RADIUS handles network access authentication; LDAP queries directory attributes. Many RADIUS servers use LDAP/AD as their backend user database.',
+    distractors: ['RADIUS (Remote Authentication Dial-In User Service)', 'OIDC (OpenID Connect)', 'Kerberos'],
+  },
+]
+
 export const AC_PRINCIPLE_SCENARIOS: ACPrincipleScenario[] = [
   {
     id: 'acp-01',
