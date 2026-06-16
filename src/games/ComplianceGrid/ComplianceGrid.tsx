@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Rank } from '../../types'
 import { RANKS } from '../../types'
@@ -94,7 +93,6 @@ function ComplianceCard({
   onSubmit?: (idx: number) => void
   snapshot?: number
 }) {
-  const [picked, setPicked] = useState<number | null>(snapshot ?? null)
   const isReview = snapshot !== undefined
   const catColor = CATEGORY_COLORS[question.category]
 
@@ -148,14 +146,12 @@ function ComplianceCard({
           if (isReview) {
             if (i === question.correctIndex)     { border = 'var(--c-green)'; bg = 'rgba(74,222,128,0.07)'; color = 'var(--c-green)' }
             else if (i === snapshot && snapshot !== question.correctIndex) { border = 'var(--c-pink)'; bg = 'rgba(244,114,182,0.07)'; color = 'var(--c-pink)' }
-          } else if (picked === i) {
-            border = catColor; bg = `${catColor}15`
           }
 
           return (
             <button
               key={i}
-              onClick={() => { if (!isReview) setPicked(i) }}
+              onClick={() => { if (!isReview) onSubmit?.(i) }}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: 12,
                 padding: '11px 16px', background: bg, border: `1px solid ${border}`,
@@ -167,7 +163,7 @@ function ComplianceCard({
                 fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, minWidth: 24,
                 color: isReview
                   ? (i === question.correctIndex ? 'var(--c-green)' : i === snapshot ? 'var(--c-pink)' : 'var(--c-dim)')
-                  : (picked === i ? catColor : 'var(--c-dim)'),
+                  : 'var(--c-dim)',
                 flexShrink: 0,
               }}>{String.fromCharCode(65 + i)}.</span>
               <span style={{ color, fontSize: 13, lineHeight: 1.55, flex: 1 }}>{opt}</span>
@@ -178,16 +174,6 @@ function ComplianceCard({
         })}
       </div>
 
-      {!isReview && (
-        <button
-          className="btn-neon btn-cyan"
-          style={{ alignSelf: 'center', padding: '8px 28px' }}
-          disabled={picked === null}
-          onClick={() => { if (picked !== null) onSubmit?.(picked) }}
-        >
-          ▶ CONFIRM ANSWER
-        </button>
-      )}
     </div>
   )
 }

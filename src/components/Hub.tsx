@@ -35,14 +35,14 @@ const GAMES: GameMeta[] = [
 ]
 
 const ASCII_BANNER = `
- ███████╗███████╗ ██████╗███████╗ ██████╗ ██████╗  ██████╗ ███████╗
- ██╔════╝██╔════╝██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔════╝ ██╔════╝
- ███████╗█████╗  ██║     █████╗  ██║   ██║██████╔╝██║  ███╗█████╗
- ╚════██║██╔══╝  ██║     ██╔══╝  ██║   ██║██╔══██╗██║   ██║██╔══╝
- ███████║███████╗╚██████╗██║     ╚██████╔╝██║  ██║╚██████╔╝███████╗
- ╚══════╝╚══════╝ ╚═════╝╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝`
+ ███████╗███████╗ ██████╗██╗     ██╗████████╗███████╗
+ ██╔════╝██╔════╝██╔════╝██║     ██║╚══██╔══╝██╔════╝
+ ███████╗█████╗  ██║     ██║     ██║   ██║   █████╗
+ ╚════██║██╔══╝  ██║     ██║     ██║   ██║   ██╔══╝
+ ███████║███████╗╚██████╗███████╗██║   ██║   ███████╗
+ ╚══════╝╚══════╝ ╚═════╝╚══════╝╚═╝   ╚═╝   ╚══════╝`
 
-// Bars = SECFORGE's PBQ coverage of each domain's exam-relevant content
+// Bars = SECLITE's PBQ coverage of each domain's exam-relevant content
 // Exam domain weights: D1=12% D2=22% D3=18% D4=28% D5=20%
 const DOMAIN_COVERAGE = [
   { domain: 'Domain 1 (12%) — General Security Concepts',        pct: 55,  color: 'var(--c-blue)',   note: 'AccessControl: models + least privilege / SoD' },
@@ -62,9 +62,9 @@ export function Hub() {
     <div style={{ width: '100%', minHeight: '100vh' }}>
       {/* Terminal header */}
       <div className="flex items-center gap-3 px-5 py-2.5 border-b border-[var(--c-border)] bg-[var(--c-surface)] sticky top-0 z-50 term-header">
-        <span style={{ color: 'var(--c-cyan)', fontWeight: 700 }}>root@secforge</span>
+        <span style={{ color: 'var(--c-cyan)', fontWeight: 700 }}>root@seclite</span>
         <span style={{ color: 'var(--c-dim)' }}>:~$</span>
-        <span style={{ color: 'var(--c-body)' }}>./secforge <span style={{ color: 'var(--c-green)' }}>--launch</span></span>
+        <span style={{ color: 'var(--c-body)' }}>./seclite <span style={{ color: 'var(--c-green)' }}>--launch</span></span>
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ color: 'var(--c-dim)', fontSize: 10, letterSpacing: '0.1em' }}>3 LIVES / RUN</span>
           <span style={{ color: 'var(--c-pink)', fontSize: 12 }}>♥♥♥</span>
@@ -116,7 +116,7 @@ export function Hub() {
 
           {/* Domain coverage bars */}
           <div style={{ border: '1px solid var(--c-border)', borderRadius: 10, padding: '16px 20px', background: 'var(--c-surface)' }}>
-            <p style={{ color: 'var(--c-dim)', fontSize: 10, marginBottom: 12, letterSpacing: '0.15em', fontFamily: 'var(--font-mono)' }}>// SECFORGE PBQ COVERAGE BY DOMAIN</p>
+            <p style={{ color: 'var(--c-dim)', fontSize: 10, marginBottom: 12, letterSpacing: '0.15em', fontFamily: 'var(--font-mono)' }}>// SECLITE PBQ COVERAGE BY DOMAIN</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {DOMAIN_COVERAGE.map((d) => (
                 <div key={d.domain}>
@@ -164,7 +164,7 @@ export function Hub() {
 
         {/* Footer */}
         <div style={{ textAlign: 'center', color: 'var(--c-dim)', fontSize: 11, borderTop: '1px solid var(--c-border)', paddingTop: 16, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>
-          SECFORGE v3.1 — CompTIA Security+ SY0-701 — 13 modules — 3 lives per run — All data runs client-side
+          SECLITE v3.1 — CompTIA Security+ SY0-701 — 13 modules — 3 lives per run — All data runs client-side
         </div>
       </div>
     </div>

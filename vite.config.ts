@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'SECFORGE — SY0-701 PBQ Trainer',
-        short_name: 'SECFORGE',
+        name: 'SECLITE — SY0-701 PBQ Trainer',
+        short_name: 'SECLITE',
         description: 'CompTIA Security+ SY0-701 performance-based question training hub',
         theme_color: '#0a0e12',
         background_color: '#0a0e12',

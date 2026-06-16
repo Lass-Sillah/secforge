@@ -6,7 +6,7 @@ import {
   MenuScreen, PlayHUD, ReviewScreen, FailedScreen, LevelUpScreen, VictoryScreen, ExplainBanner, GameOverScreen,
 } from '../../components/engine/RoguelikeLayout'
 import { useGameStore } from '../../store/gameStore'
-import { AC_SCENARIOS, AC_MODELS, AC_PRINCIPLE_SCENARIOS, type ACModel } from '../../data/accessControl'
+import { AC_SCENARIOS, AC_MODELS, AC_PRINCIPLE_SCENARIOS, AC_ZERO_TRUST_SCENARIOS, type ACModel } from '../../data/accessControl'
 
 const GAME_ID   = 'access-control'
 const GAME_NAME = 'ACCESS CONTROL'
@@ -25,6 +25,10 @@ const MODEL_COLORS: Record<string, string> = {
   'Defense in Depth':      'var(--c-dim)',
   'Role-Based Access Control': 'var(--c-cyan)',
   'Mandatory Access Control':  'var(--c-pink)',
+  'Zero Trust':                          'var(--c-cyan)',
+  'Just-in-Time (JIT) / Privileged Access Management (PAM)': 'var(--c-violet)',
+  'Zero Trust (microsegmentation / mutual TLS)':             'var(--c-cyan)',
+  'Network Segmentation (traditional)':  'var(--c-dim)',
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -37,7 +41,11 @@ function generateStack(rank: Rank): MultipleChoiceQuestion[] {
     return { id: s.id, kind: 'multiple-choice' as const, prompt: s.situation, options, correctIndex: options.indexOf(s.correctModel), explanation: s.explanation }
   })
   if (RANKS.indexOf(rank) >= 2) {
-    const p = shuffle([...AC_PRINCIPLE_SCENARIOS])[0]
+    // Ranks C+ get a principle or Zero Trust scenario
+    const pool = RANKS.indexOf(rank) >= 4
+      ? shuffle([...AC_PRINCIPLE_SCENARIOS, ...AC_ZERO_TRUST_SCENARIOS])
+      : shuffle([...AC_PRINCIPLE_SCENARIOS])
+    const p = pool[0]
     const options: string[] = shuffle([p.correctPrinciple, ...p.distractors])
     modelQs.push({ id: p.id, kind: 'multiple-choice' as const, prompt: p.situation, options, correctIndex: options.indexOf(p.correctPrinciple), explanation: p.explanation })
   }

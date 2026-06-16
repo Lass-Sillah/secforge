@@ -57,6 +57,30 @@ export interface ACPrincipleScenario {
 
 // Least privilege / need-to-know / separation of duties questions
 // These use MCQuestion format with principle names as options
+export const AC_ZERO_TRUST_SCENARIOS: ACPrincipleScenario[] = [
+  {
+    id: 'zt-01',
+    situation: 'A company eliminates implicit trust for all users regardless of whether they are inside or outside the corporate network. Every access request — even from an employee on the internal VPN — requires authentication, authorization, and continuous validation. The guiding assumption is that a breach has already occurred.',
+    correctPrinciple: 'Zero Trust',
+    explanation: 'Zero Trust is an architecture based on three principles: (1) Explicit verification — always authenticate and authorize based on all available data points; (2) Least privilege access — limit user access with just-in-time and just-enough-access policies; (3) Assume breach — minimize blast radius and segment access, verify end-to-end encryption. The key departure from traditional security: the internal network is NOT a trusted zone — traffic from inside is treated with the same scrutiny as traffic from the internet.',
+    distractors: ['Least Privilege', 'Defense in Depth', 'Separation of Duties'],
+  },
+  {
+    id: 'zt-02',
+    situation: 'A security administrator needs to perform an emergency change on a production database server. Instead of having a standing admin account with permanent database access, the PAM system grants a temporary credential valid for 4 hours that expires automatically. The session is recorded and all commands are logged.',
+    correctPrinciple: 'Just-in-Time (JIT) / Privileged Access Management (PAM)',
+    explanation: 'Just-in-Time (JIT) access is a PAM (Privileged Access Management) control where privileged credentials are granted on-demand for the minimum time needed, then auto-expire. This eliminates standing admin accounts — a common lateral movement target. PAM also provides credential vaulting (passwords checked out from a vault) and session recording (all privileged activity logged and replayable for audit). JIT is a Zero Trust implementation for privileged access: explicit, time-limited, monitored.',
+    distractors: ['Least Privilege', 'Separation of Duties', 'Need-to-Know'],
+  },
+  {
+    id: 'zt-03',
+    situation: 'A company enforces that all traffic between microservices in their cloud environment must be authenticated and encrypted using mTLS, even traffic between services on the same private subnet. No service is implicitly trusted based on its network location.',
+    correctPrinciple: 'Zero Trust (microsegmentation / mutual TLS)',
+    explanation: 'This is Zero Trust applied to service-to-service communication. Traditional perimeter security assumes traffic inside the network is safe — Zero Trust eliminates this assumption. Mutual TLS (mTLS) requires BOTH services to present certificates, ensuring only authorized services can communicate. Microsegmentation creates granular network policies between individual workloads rather than trusting entire subnets. This prevents lateral movement: a compromised service cannot communicate with others without a valid certificate.',
+    distractors: ['Defense in Depth', 'Network Segmentation (traditional)', 'MAC'],
+  },
+]
+
 export const AC_PRINCIPLE_SCENARIOS: ACPrincipleScenario[] = [
   {
     id: 'acp-01',

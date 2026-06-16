@@ -28,6 +28,14 @@ export const ALGORITHMS: AlgoEntry[] = [
   { name: 'SHA-3',    type: 'hashing', note: 'NIST-standardized (2015), different design from SHA-2 (Keccak sponge). Not yet widely deployed but fully secure.' },
   { name: 'HMAC',     type: 'hashing', note: 'Hash-based Message Authentication Code — combines a key with a hash to provide integrity + authenticity.' },
   { name: 'bcrypt',   type: 'hashing', note: 'Password hashing function with work factor — slow by design to resist brute force. Preferred for password storage.' },
+  // AES Modes of Operation
+  { name: 'AES-ECB', type: 'deprecated', note: 'NEVER USE — Electronic Codebook mode. Identical plaintext blocks → identical ciphertext blocks. Patterns leak (the "ECB penguin" problem).', deprecated: true, deprecatedReason: 'ECB encrypts each 16-byte block independently with no chaining. Identical plaintext blocks produce identical ciphertext — patterns in data are preserved in the ciphertext. Reveals structure.' },
+  { name: 'AES-CBC', type: 'symmetric', keySize: '128/256-bit', note: 'Cipher Block Chaining — each block XORed with previous ciphertext before encryption. Requires a random IV. Good but no built-in integrity.' },
+  { name: 'AES-CTR', type: 'symmetric', keySize: '128/256-bit', note: 'Counter Mode — turns AES into a stream cipher using an incrementing counter + nonce. Parallelizable. Nonce must NEVER be reused.' },
+  { name: 'AES-GCM', type: 'symmetric', keySize: '128/256-bit', note: 'Galois/Counter Mode — AEAD (Authenticated Encryption with Associated Data). Provides both encryption AND integrity/authentication in one operation. Current best practice for TLS, disk encryption, VPNs.' },
+  // Key stretching
+  { name: 'PBKDF2',  type: 'hashing', note: 'Password-Based Key Derivation Function 2 — applies HMAC thousands of times to stretch a passphrase into a cryptographic key. Used for disk encryption passphrases and password hashing.' },
+  { name: 'Argon2',  type: 'hashing', note: 'Memory-hard password hashing — winner of the Password Hashing Competition (2015). Resistant to GPU/ASIC attacks due to high memory requirements. Preferred over bcrypt for new systems.' },
   // Deprecated
   { name: 'MD5',     type: 'deprecated', note: 'DEPRECATED — collision vulnerabilities.',     deprecated: true, deprecatedReason: 'Collision vulnerabilities discovered (2004+). An attacker can craft two different inputs with the same MD5 hash. Never use for security.' },
   { name: 'SHA-1',   type: 'deprecated', note: 'DEPRECATED — SHAttered collision (2017).',    deprecated: true, deprecatedReason: 'Practical collision attack demonstrated (2017, SHAttered). Deprecated by NIST. Browsers and CAs have removed support.' },
@@ -114,5 +122,48 @@ export const CRYPTO_USE_CASES: CryptoUseCase[] = [
     correctAlgo: 'RSA-2048',
     wrongAlgos: ['ECDH', 'AES-256', 'SHA-256'],
     explanation: 'Static RSA key exchange (in TLS 1.2 and earlier) uses the server\'s long-term RSA private key to protect the pre-master secret. If the private key is ever compromised, an attacker who recorded past traffic can decrypt all of it — no forward secrecy. TLS 1.3 completely removes static RSA key exchange and mandates ephemeral Diffie-Hellman (ECDHE or DHE). If you see RSA used for key exchange (not just signatures) in a TLS config, it\'s a compliance finding.',
+  },
+  // ─── AES Modes ───────────────────────────────────────────────────────────────
+  {
+    id: 'cu-11',
+    scenario: 'A security architect reviews an encryption implementation and discovers it divides a file into 16-byte blocks and encrypts each block independently. Encrypted images still show visible shapes and patterns. Which mode is this and why is it a critical flaw?',
+    correctAlgo: 'AES-ECB',
+    wrongAlgos: ['AES-GCM', 'AES-CBC', 'AES-CTR'],
+    explanation: 'ECB (Electronic Codebook) mode encrypts every block independently with the same key. Identical 16-byte plaintext blocks produce identical 16-byte ciphertext blocks — patterns in the plaintext are perfectly preserved in the ciphertext. The "ECB penguin" problem illustrates this: encrypt a bitmap with ECB and the penguin shape is still visible. ECB is never appropriate for encrypting more than one block of non-random data. Replace with AES-GCM.',
+  },
+  {
+    id: 'cu-12',
+    scenario: 'A developer needs to encrypt data where the same key will be used repeatedly. They want no pattern leakage between identical plaintext blocks, and each message should use a new random value to ensure ciphertext uniqueness. Integrity checking is handled separately. Which mode fits?',
+    correctAlgo: 'AES-CBC',
+    wrongAlgos: ['AES-ECB', 'AES-GCM', 'RSA-2048'],
+    explanation: 'AES-CBC (Cipher Block Chaining) XORs each plaintext block with the previous ciphertext block before encryption. A random IV (Initialization Vector) for the first block ensures that encrypting the same plaintext with the same key produces different ciphertext each time. CBC eliminates the pattern-leakage problem of ECB. The trade-off: CBC provides no authentication — integrity must be handled separately (e.g., with HMAC). AES-GCM would be preferable in most modern systems as it provides both.',
+  },
+  {
+    id: 'cu-13',
+    scenario: 'An application needs to encrypt a stream of data where random access to different positions is required (e.g., seeking in an encrypted video file). The operation must be parallelizable across CPU cores. Which AES mode is appropriate?',
+    correctAlgo: 'AES-CTR',
+    wrongAlgos: ['AES-CBC', 'AES-ECB', 'bcrypt'],
+    explanation: 'AES-CTR (Counter Mode) turns AES into a stream cipher by encrypting a counter concatenated with a nonce and XORing the keystream with plaintext. Because each block is independent (uses its counter value), CTR is fully parallelizable — multiple blocks can be encrypted simultaneously. It also allows random access: to decrypt byte N, compute keystream for that position only. CBC is sequential (each block depends on the previous) and does not support random access. Warning: the nonce must never be reused — reusing a nonce with the same key completely breaks CTR.',
+  },
+  {
+    id: 'cu-14',
+    scenario: 'A cloud storage service wants to encrypt files such that any tampering with the ciphertext is detectable by the recipient — without requiring a separate MAC or HMAC calculation. Which AES mode provides both confidentiality and built-in authentication?',
+    correctAlgo: 'AES-GCM',
+    wrongAlgos: ['AES-CBC', 'AES-CTR', 'AES-ECB'],
+    explanation: 'AES-GCM (Galois/Counter Mode) is an AEAD (Authenticated Encryption with Associated Data) mode — it provides confidentiality (encryption), integrity (detects any modification to ciphertext), and authenticity in a single operation. The Galois field authentication tag (typically 128-bit) is appended to the ciphertext. Any bit flip in the ciphertext will cause authentication to fail before decryption proceeds. This is why AES-GCM is the preferred mode in TLS 1.3, WPA3, and modern disk encryption. AES-CBC and AES-CTR provide confidentiality only — integrity requires a separate HMAC.',
+  },
+  {
+    id: 'cu-15',
+    scenario: 'A system encrypts user passwords and stores a salt + hash in the database. The security team discovers the hash function used completes in under 1 millisecond per attempt, making GPU-accelerated brute force trivially fast. Which algorithm should replace it?',
+    correctAlgo: 'Argon2',
+    wrongAlgos: ['SHA-256', 'AES-GCM', 'PBKDF2'],
+    explanation: 'Argon2 won the Password Hashing Competition (2015) and is designed to be memory-hard — it requires large amounts of RAM per computation, which makes GPU and ASIC attacks prohibitively expensive (GPUs excel at parallel computation but have limited per-core memory). Password hashing must be slow by design. Argon2 is the current recommendation for new systems; bcrypt and PBKDF2 are acceptable but older. SHA-256 is a general-purpose hash — too fast for passwords. AES-GCM is encryption, not hashing.',
+  },
+  {
+    id: 'cu-16',
+    scenario: 'A user provides a passphrase (e.g., "CorrectHorseBatteryStaple") to unlock full-disk encryption. The software must convert this passphrase into a 256-bit cryptographic key. Which algorithm performs this conversion?',
+    correctAlgo: 'PBKDF2',
+    wrongAlgos: ['SHA-256', 'AES-256', 'HMAC'],
+    explanation: 'PBKDF2 (Password-Based Key Derivation Function 2) derives a cryptographic key from a passphrase by applying a pseudorandom function (typically HMAC-SHA256) many thousands of times — its iteration count is configurable and increases the computational cost of brute-force attacks. It is specifically designed for this key-derivation use case and is used by WPA2 (for PMK derivation from PSK) and many disk encryption systems (macOS FileVault, VeraCrypt). SHA-256 alone is one pass — too fast. AES-256 is an encryption algorithm, not a KDF.',
   },
 ]
