@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react'
+import { useTouchDrag } from '../../components/engine/useTouchDrag'
 import { useNavigate } from 'react-router-dom'
 import type { DragRulesetQuestion, FirewallRule, Rank } from '../../types'
 import { RANKS } from '../../types'
 import { useRoguelikeEngine } from '../../components/engine/useRoguelikeEngine'
 import {
-  MenuScreen, PlayHUD, ReviewScreen, FailedScreen, LevelUpScreen, VictoryScreen, ExplainBanner,
+  MenuScreen, PlayHUD, ReviewScreen, FailedScreen, LevelUpScreen, VictoryScreen, ExplainBanner, GameOverScreen,
 } from '../../components/engine/RoguelikeLayout'
 import { useGameStore } from '../../store/gameStore'
 import { FIREWALL_SCENARIOS } from '../../data/firewall'
@@ -86,8 +87,10 @@ function FirewallQuestion({
     ? snapshot.map((id) => question.rules.find((r) => r.id === id)!).filter(Boolean)
     : (question.shuffledRules ?? question.rules)
   const [rules, setRules] = useState<FirewallRule[]>(initial)
+  const [_dragOver, setDragOver] = useState<number | null>(null)
   const dragIdx = useRef<number | null>(null)
   const correctIds = question.rules.map((r) => r.id)
+  const { dragProps } = useTouchDrag(rules, setRules as (items: FirewallRule[]) => void, setDragOver)
 
   const handleDrop = (targetIdx: number) => {
     if (dragIdx.current === null || dragIdx.current === targetIdx) return
@@ -96,6 +99,7 @@ function FirewallQuestion({
     newRules.splice(targetIdx, 0, moved)
     setRules(newRules)
     dragIdx.current = null
+    setDragOver(null)
   }
 
   return (
@@ -113,24 +117,25 @@ function FirewallQuestion({
 
       {!snapshot && (
         <p style={{ color: 'var(--c-dim)', fontSize: 11, textAlign: 'center', letterSpacing: '0.08em' }}>
-          DRAG rules into correct top-down order — first match wins
+          DRAG rules into correct top-down order — first match wins • Touch drag supported
         </p>
       )}
 
       {/* Rules */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         {rules.map((rule, i) => (
+          <div key={rule.id} {...(!snapshot ? dragProps(i) : {})}>
           <RuleRow
-            key={rule.id}
             rule={rule} index={i}
             draggable={!snapshot}
             isDragging={dragIdx.current === i}
             onDragStart={() => { dragIdx.current = i }}
-            onDragOver={() => {}}
+            onDragOver={() => setDragOver(i)}
             onDrop={() => handleDrop(i)}
             isReview={!!snapshot}
             isCorrect={snapshot ? correctIds[i] === rule.id : undefined}
           />
+          </div>
         ))}
       </div>
 
@@ -163,6 +168,7 @@ export default function FirewallForge() {
 
   if (phase === 'menu')    return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
   if (phase === 'failed')  return <FailedScreen actions={actions} rank={rank} />
+  if (phase === 'gameover') return <GameOverScreen score={state.score} rank={rank} onRestart={actions.startGame} onQuit={() => navigate('/')} />
   if (phase === 'levelup') return <LevelUpScreen prevRank={rank} newRank={RANKS[RANKS.indexOf(rank) + 1]} onContinue={actions.proceedAfterLevelup} />
   if (phase === 'victory') return <VictoryScreen score={state.score} flawless={state.flawless} onQuit={() => navigate('/')} />
 

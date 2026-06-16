@@ -97,6 +97,7 @@ export type EnginePhase =
   | 'failed'
   | 'levelup'
   | 'victory'
+  | 'gameover'
 
 export interface EngineConfig {
   gameId: string
@@ -129,6 +130,7 @@ export type GameId =
   | 'pki-lab'
   | 'wireless-config'
   | 'harden-target'
+  | 'acro-flip'
 
 export interface GlobalStats {
   records: Record<GameId, GameRecord>

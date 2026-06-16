@@ -4,10 +4,11 @@ import type { DragOrderQuestion, Rank } from '../../types'
 import { RANKS } from '../../types'
 import { useRoguelikeEngine } from '../../components/engine/useRoguelikeEngine'
 import {
-  MenuScreen, PlayHUD, ReviewScreen, FailedScreen, LevelUpScreen, VictoryScreen, ExplainBanner,
+  MenuScreen, PlayHUD, ReviewScreen, FailedScreen, LevelUpScreen, VictoryScreen, ExplainBanner, GameOverScreen,
 } from '../../components/engine/RoguelikeLayout'
 import { useGameStore } from '../../store/gameStore'
 import { IR_STEPS, IR_DESCRIPTIONS, OOV_STEPS, OOV_DESCRIPTIONS } from '../../data/incidents'
+import { useTouchDrag } from '../../components/engine/useTouchDrag'
 
 const GAME_ID   = 'incident-order'
 const GAME_NAME = 'INCIDENT ORDER'
@@ -49,6 +50,7 @@ function OrderCard({
   const [items, setItems] = useState([...initial])
   const dragIdx = useRef<number | null>(null)
   const [dragOver, setDragOver] = useState<number | null>(null)
+  const { dragProps } = useTouchDrag(items, setItems, setDragOver)
 
   const handleDrop = (targetIdx: number) => {
     if (dragIdx.current === null || dragIdx.current === targetIdx) return
@@ -68,7 +70,7 @@ function OrderCard({
       {/* Prompt */}
       <div style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderLeft: `3px solid ${isIR ? 'var(--c-orange)' : 'var(--c-blue)'}`, borderRadius: 6, padding: '12px 16px' }}>
         <p style={{ color: isIR ? 'var(--c-orange)' : 'var(--c-blue)', fontWeight: 700, fontSize: 14, margin: 0 }}>{question.prompt}</p>
-        {!isReview && <p style={{ color: 'var(--c-dim)', fontSize: 11, margin: '4px 0 0' }}>Drag steps to reorder • 1 = first action</p>}
+        {!isReview && <p style={{ color: 'var(--c-dim)', fontSize: 11, margin: '4px 0 0' }}>Drag steps to reorder • 1 = first action • Touch drag supported</p>}
       </div>
 
       {/* Steps */}
@@ -89,6 +91,7 @@ function OrderCard({
               onDragOver={(e) => { e.preventDefault(); setDragOver(i) }}
               onDragLeave={() => setDragOver(null)}
               onDrop={(e) => { e.preventDefault(); handleDrop(i) }}
+              {...(!isReview ? dragProps(i) : {})}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: 12,
                 padding: '12px 14px',
@@ -147,6 +150,7 @@ export default function IncidentOrder() {
 
   if (phase === 'menu')    return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
   if (phase === 'failed')  return <FailedScreen actions={actions} rank={rank} />
+  if (phase === 'gameover') return <GameOverScreen score={state.score} rank={rank} onRestart={actions.startGame} onQuit={() => navigate('/')} />
   if (phase === 'levelup') return <LevelUpScreen prevRank={rank} newRank={RANKS[RANKS.indexOf(rank) + 1]} onContinue={actions.proceedAfterLevelup} />
   if (phase === 'victory') return <VictoryScreen score={state.score} flawless={state.flawless} onQuit={() => navigate('/')} />
 

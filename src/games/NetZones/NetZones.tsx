@@ -4,7 +4,7 @@ import type { DragMatchQuestion, Rank } from '../../types'
 import { RANKS } from '../../types'
 import { useRoguelikeEngine } from '../../components/engine/useRoguelikeEngine'
 import {
-  MenuScreen, PlayHUD, ReviewScreen, FailedScreen, LevelUpScreen, VictoryScreen, ExplainBanner,
+  MenuScreen, PlayHUD, ReviewScreen, FailedScreen, LevelUpScreen, VictoryScreen, ExplainBanner, GameOverScreen,
 } from '../../components/engine/RoguelikeLayout'
 import { useGameStore } from '../../store/gameStore'
 import { NET_ZONE_SCENARIOS, ZONES, ZONE_COLORS, ZONE_DESCRIPTIONS } from '../../data/netZones'
@@ -220,6 +220,7 @@ export default function NetZones() {
 
   if (phase === 'menu')    return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
   if (phase === 'failed')  return <FailedScreen actions={actions} rank={rank} />
+  if (phase === 'gameover') return <GameOverScreen score={state.score} rank={rank} onRestart={actions.startGame} onQuit={() => navigate('/')} />
   if (phase === 'levelup') return <LevelUpScreen prevRank={rank} newRank={RANKS[RANKS.indexOf(rank) + 1]} onContinue={actions.proceedAfterLevelup} />
   if (phase === 'victory') return <VictoryScreen score={state.score} flawless={state.flawless} onQuit={() => navigate('/')} />
 

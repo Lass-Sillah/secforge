@@ -22,6 +22,7 @@ const defaultGlobalStats = (): GlobalStats => ({
     'pki-lab':         defaultRecord(),
     'wireless-config': defaultRecord(),
     'harden-target':   defaultRecord(),
+    'acro-flip':       defaultRecord(),
   },
   studyDates: [],
 })

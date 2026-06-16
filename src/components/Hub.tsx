@@ -29,6 +29,8 @@ const GAMES: GameMeta[] = [
   // Row 4 — Wireless & hardening
   { id: 'wireless-config', name: 'WIRELESS CONFIG',  subtitle: 'WPA2/WPA3, EAP-TLS, PEAP, 802.1X — pick the right one', domains: 'Domain 3',  route: '/wireless-config', color: 'var(--c-cyan)',   icon: '◈' },
   { id: 'harden-target',   name: 'HARDEN TARGET',    subtitle: 'Audit running services; flag every misconfiguration',  domains: 'Domain 3 & 4', route: '/harden-target',   color: 'var(--c-orange)', icon: '◉' },
+  // Row 5 — Acronyms
+  { id: 'acro-flip',       name: 'ACRO FLIP',        subtitle: 'Memory card pairs + fill-in-the-blank — master every SY0-701 acronym', domains: 'All Domains', route: '/acro-flip', color: 'var(--c-violet)', icon: '◑' },
 ]
 
 const ASCII_BANNER = `
@@ -58,58 +60,73 @@ export function Hub() {
   return (
     <div style={{ width: '100%', minHeight: '100vh' }}>
       {/* Terminal header */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-[var(--c-border)] bg-[var(--c-surface)] text-xs text-[var(--c-dim)] sticky top-0 z-50">
-        <span className="text-[var(--c-cyan)]">root@secforge</span>
-        <span>:~$</span>
-        <span className="text-[var(--c-body)]">./secforge <span className="text-[var(--c-green)]">--launch</span></span>
-        <span className="ml-auto pulse-glow text-[var(--c-green)]">■</span>
+      <div className="flex items-center gap-3 px-5 py-2.5 border-b border-[var(--c-border)] bg-[var(--c-surface)] sticky top-0 z-50 term-header">
+        <span style={{ color: 'var(--c-cyan)', fontWeight: 700 }}>root@secforge</span>
+        <span style={{ color: 'var(--c-dim)' }}>:~$</span>
+        <span style={{ color: 'var(--c-body)' }}>./secforge <span style={{ color: 'var(--c-green)' }}>--launch</span></span>
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: 'var(--c-dim)', fontSize: 10, letterSpacing: '0.1em' }}>3 LIVES / RUN</span>
+          <span style={{ color: 'var(--c-pink)', fontSize: 12 }}>♥♥♥</span>
+          <span className="pulse-glow" style={{ color: 'var(--c-green)', marginLeft: 4 }}>■</span>
+        </div>
       </div>
 
       {/* Centered content */}
-      <div className="flex flex-col p-6 gap-8 fade-in" style={{ maxWidth: '1200px', width: '100%', margin: '0 auto' }}>
+      <div className="flex flex-col p-6 gap-8 fade-in" style={{ maxWidth: '1280px', width: '100%', margin: '0 auto' }}>
 
-        {/* ASCII Banner */}
-        <div className="text-center">
-          <pre className="text-[8px] sm:text-[10px] leading-tight overflow-x-auto" style={{ color: 'var(--c-cyan)', textShadow: '0 0 8px var(--c-cyan)' }}>
+        {/* Banner */}
+        <div className="text-center" style={{ paddingTop: 8 }}>
+          <pre className="term-header overflow-x-auto inline-block" style={{
+            fontSize: 'clamp(6px, 1.2vw, 11px)',
+            lineHeight: 1.25,
+            color: 'var(--c-cyan)',
+            textShadow: '0 0 10px rgba(34,211,238,0.5)',
+            letterSpacing: '0.02em',
+          }}>
             {ASCII_BANNER}
           </pre>
-          <p className="text-[var(--c-dim)] text-xs mt-3 tracking-widest">SY0-701 PBQ TRAINER — 11 MODULES — TERMINAL EDITION</p>
+          <p style={{ color: 'var(--c-dim)', fontSize: 11, marginTop: 12, letterSpacing: '0.18em', fontFamily: 'var(--font-mono)' }}>
+            SY0-701 PBQ TRAINER — 12 MODULES — 3 LIVES PER RUN
+          </p>
         </div>
 
-        {/* Stats + Domain coverage side by side */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 12 }}>
+        {/* Stats + Domain coverage */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) 2fr', gap: 14 }}>
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-3 border border-[var(--c-border)] p-4 rounded bg-[var(--c-surface)]">
-            <div className="text-center">
-              <p className="text-2xl font-bold glow-green text-[var(--c-green)]">{totalFlawless}</p>
-              <p className="text-[10px] text-[var(--c-dim)] mt-1">FLAWLESS</p>
-            </div>
-            <div className="text-center border-x border-[var(--c-border)]">
-              <p className="text-2xl font-bold" style={{ color: highestRank ? RANK_COLORS[highestRank] : 'var(--c-dim)', textShadow: highestRank ? `0 0 10px ${RANK_COLORS[highestRank]}` : undefined }}>
-                {highestRank ?? '—'}
-              </p>
-              <p className="text-[10px] text-[var(--c-dim)] mt-1">BEST RANK</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold glow-amber text-[var(--c-amber)]">{streak}</p>
-              <p className="text-[10px] text-[var(--c-dim)] mt-1">DAY STREAK</p>
-            </div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: 0, border: '1px solid var(--c-border)', borderRadius: 10,
+            background: 'var(--c-surface)', overflow: 'hidden',
+          }}>
+            {[
+              { value: totalFlawless, label: 'FLAWLESS', color: 'var(--c-green)', cls: 'glow-green' },
+              { value: highestRank ?? '—', label: 'BEST RANK', color: highestRank ? RANK_COLORS[highestRank] : 'var(--c-dim)', shadow: highestRank ? `0 0 12px ${RANK_COLORS[highestRank]}` : undefined },
+              { value: streak, label: 'DAY STREAK', color: 'var(--c-amber)', cls: 'glow-amber' },
+            ].map((s, i) => (
+              <div key={i} style={{
+                textAlign: 'center', padding: '18px 12px',
+                borderRight: i < 2 ? '1px solid var(--c-border)' : undefined,
+              }}>
+                <p className={s.cls} style={{ fontSize: 26, fontWeight: 700, color: s.color, textShadow: s.shadow, fontFamily: 'var(--font-mono)', lineHeight: 1 }}>{s.value}</p>
+                <p style={{ fontSize: 10, color: 'var(--c-dim)', marginTop: 6, letterSpacing: '0.12em', fontFamily: 'var(--font-mono)' }}>{s.label}</p>
+              </div>
+            ))}
           </div>
 
           {/* Domain coverage bars */}
-          <div className="border border-[var(--c-border)] p-4 rounded bg-[var(--c-surface)]">
-            <p className="text-[10px] text-[var(--c-dim)] mb-3 tracking-widest">// SECFORGE PBQ COVERAGE BY DOMAIN</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ border: '1px solid var(--c-border)', borderRadius: 10, padding: '16px 20px', background: 'var(--c-surface)' }}>
+            <p style={{ color: 'var(--c-dim)', fontSize: 10, marginBottom: 12, letterSpacing: '0.15em', fontFamily: 'var(--font-mono)' }}>// SECFORGE PBQ COVERAGE BY DOMAIN</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {DOMAIN_COVERAGE.map((d) => (
                 <div key={d.domain}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 2 }}>
-                    <span style={{ color: 'var(--c-dim)', fontSize: 10 }}>{d.domain}</span>
-                    <span style={{ color: d.color, fontSize: 10, fontWeight: 700 }}>{d.pct}%</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <span style={{ color: 'var(--c-body)', fontSize: 12, fontWeight: 500 }}>{d.domain}</span>
+                    <span style={{ color: d.color, fontSize: 12, fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{d.pct}%</span>
                   </div>
-                  <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginBottom: 2 }}>
-                    <div style={{ height: '100%', width: `${d.pct}%`, background: d.color, borderRadius: 2, boxShadow: `0 0 6px ${d.color}` }} />
+                  <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden', marginBottom: 3 }}>
+                    <div style={{ height: '100%', width: `${d.pct}%`, background: d.color, borderRadius: 3, boxShadow: `0 0 8px ${d.color}` }} />
                   </div>
-                  <p style={{ color: 'var(--c-dim)', fontSize: 9, opacity: 0.6, margin: 0 }}>{d.note}</p>
+                  <p style={{ color: 'var(--c-dim)', fontSize: 11, margin: 0, opacity: 0.7 }}>{d.note}</p>
                 </div>
               ))}
             </div>
@@ -118,7 +135,9 @@ export function Hub() {
 
         {/* Game grid */}
         <div>
-          <p className="text-[var(--c-dim)] text-xs mb-4 tracking-widest">// SELECT TRAINING MODULE</p>
+          <p style={{ color: 'var(--c-dim)', fontSize: 10, marginBottom: 16, letterSpacing: '0.15em', fontFamily: 'var(--font-mono)' }}>
+            // SELECT TRAINING MODULE
+          </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {GAMES.map((game) => {
               const record = store.records[game.id]
@@ -129,18 +148,22 @@ export function Hub() {
         </div>
 
         {/* PBQ coverage note */}
-        <div className="border border-[var(--c-border)] bg-[var(--c-surface)] p-4 rounded text-[11px] text-[var(--c-dim)]">
-          <p className="text-[var(--c-cyan)] font-bold text-xs mb-2">PBQ COVERAGE — SY0-701</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '4px 24px' }}>
-            {['Ports & Protocols', 'Firewall / ACL Rules', 'Network Zone Placement', 'Log Analysis / IoC', 'Attack Identification', 'Incident Response (PICERL)', 'Order of Volatility', 'Access Control Models', 'Cryptography Selection', 'PKI / Certificate Types', 'TLS Handshake Sequence', 'Wireless Security (WPA/EAP)', 'Server & Endpoint Hardening'].map((t) => (
-              <span key={t} style={{ color: 'var(--c-dim)' }}>✓ {t}</span>
+        <div style={{ border: '1px solid var(--c-border)', background: 'var(--c-surface)', borderRadius: 10, padding: '20px 24px' }}>
+          <p style={{ color: 'var(--c-cyan)', fontWeight: 700, fontSize: 12, marginBottom: 12, letterSpacing: '0.1em', fontFamily: 'var(--font-mono)' }}>
+            PBQ COVERAGE — SY0-701
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '6px 24px' }}>
+            {['Ports & Protocols', 'Firewall / ACL Rules', 'Network Zone Placement', 'Log Analysis / IoC', 'Attack Identification', 'Incident Response (PICERL)', 'Order of Volatility', 'Access Control Models', 'Cryptography Selection', 'PKI / Certificate Types', 'TLS Handshake Sequence', 'Wireless Security (WPA/EAP)', 'Server & Endpoint Hardening', 'SY0-701 Acronyms (Memory + Fill-in)'].map((t) => (
+              <span key={t} style={{ color: 'var(--c-dim)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ color: 'var(--c-green)', fontSize: 10 }}>✓</span> {t}
+              </span>
             ))}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="text-center text-[var(--c-dim)] text-[10px] border-t border-[var(--c-border)] pt-4">
-          SECFORGE v2.0 — CompTIA Security+ SY0-701 — 11 modules — All data runs client-side
+        <div style={{ textAlign: 'center', color: 'var(--c-dim)', fontSize: 11, borderTop: '1px solid var(--c-border)', paddingTop: 16, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>
+          SECFORGE v3.0 — CompTIA Security+ SY0-701 — 12 modules — 3 lives per run — All data runs client-side
         </div>
       </div>
     </div>
@@ -149,22 +172,34 @@ export function Hub() {
 
 function GameCard({ game, bestRank, bestScore }: { game: GameMeta; bestRank: Rank | null; bestScore: number }) {
   return (
-    <Link to={game.route} className="block border border-[var(--c-border)] bg-[var(--c-surface)] p-4 rounded transition-all duration-200 no-underline group" style={{ '--hover-color': game.color } as React.CSSProperties}>
-      <div className="flex items-center justify-between mb-3" style={{ borderBottom: '1px solid var(--c-border)', paddingBottom: 8 }}>
-        <span className="text-2xl" style={{ color: game.color }}>{game.icon}</span>
+    <Link
+      to={game.route}
+      className="game-card block no-underline"
+      style={{
+        '--hover-color': game.color,
+        border: '1px solid var(--c-border)',
+        background: 'var(--c-surface)',
+        borderRadius: 10,
+        padding: '18px 18px 14px',
+        display: 'block',
+        textDecoration: 'none',
+      } as React.CSSProperties}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid var(--c-border)' }}>
+        <span style={{ fontSize: 22, color: game.color, lineHeight: 1 }}>{game.icon}</span>
         {bestRank ? (
-          <span className="text-lg font-bold" style={{ color: RANK_COLORS[bestRank], textShadow: `0 0 8px ${RANK_COLORS[bestRank]}` }}>RANK {bestRank}</span>
+          <span style={{ fontWeight: 700, fontSize: 14, color: RANK_COLORS[bestRank], textShadow: `0 0 10px ${RANK_COLORS[bestRank]}`, fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>RANK {bestRank}</span>
         ) : (
-          <span className="text-[10px] text-[var(--c-dim)] border border-[var(--c-border)] px-2 py-0.5 rounded">NOT STARTED</span>
+          <span style={{ fontSize: 10, color: 'var(--c-dim)', border: '1px solid var(--c-border)', padding: '2px 8px', borderRadius: 4, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>NOT STARTED</span>
         )}
       </div>
-      <h3 className="font-bold text-sm mb-1" style={{ color: game.color }}>{game.name}</h3>
-      <p className="text-[11px] text-[var(--c-dim)] mb-3 leading-snug">{game.subtitle}</p>
-      <div className="flex items-center justify-between">
-        <span className="text-[10px] px-2 py-0.5 rounded border" style={{ color: game.color, borderColor: game.color, opacity: 0.6 }}>{game.domains}</span>
-        <span className="text-[10px] text-[var(--c-dim)]">{bestScore > 0 ? `${bestScore.toLocaleString()} pts` : '—'}</span>
+      <h3 style={{ fontWeight: 700, fontSize: 13, marginBottom: 4, color: game.color, fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>{game.name}</h3>
+      <p style={{ fontSize: 12, color: 'var(--c-dim)', marginBottom: 14, lineHeight: 1.5 }}>{game.subtitle}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <span style={{ fontSize: 10, color: game.color, borderColor: game.color, border: '1px solid', opacity: 0.65, padding: '2px 8px', borderRadius: 4, fontFamily: 'var(--font-mono)', letterSpacing: '0.06em' }}>{game.domains}</span>
+        <span style={{ fontSize: 11, color: 'var(--c-dim)', fontFamily: 'var(--font-mono)' }}>{bestScore > 0 ? `${bestScore.toLocaleString()} pts` : '—'}</span>
       </div>
-      <div className="mt-3 w-full btn-neon text-xs" style={{ color: game.color, borderColor: game.color }}>▶ PLAY</div>
+      <button className="btn-neon" style={{ width: '100%', color: game.color, borderColor: game.color, fontSize: 11 }}>▶ PLAY</button>
     </Link>
   )
 }

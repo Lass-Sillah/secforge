@@ -13,6 +13,7 @@ const NetZones       = lazy(() => import('./games/NetZones/NetZones'))
 const PkiLab         = lazy(() => import('./games/PkiLab/PkiLab'))
 const WirelessConfig = lazy(() => import('./games/WirelessConfig/WirelessConfig'))
 const HardenTarget   = lazy(() => import('./games/HardenTarget/HardenTarget'))
+const AcroFlip       = lazy(() => import('./games/AcroFlip/AcroFlip'))
 
 function Loading() {
   return (
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="/pki-lab"         element={<PkiLab />} />
           <Route path="/wireless-config" element={<WirelessConfig />} />
           <Route path="/harden-target"   element={<HardenTarget />} />
+          <Route path="/acro-flip"       element={<AcroFlip />} />
         </Routes>
       </Suspense>
     </HashRouter>

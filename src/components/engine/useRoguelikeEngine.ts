@@ -51,6 +51,7 @@ export interface EngineState {
   pendingAdvance: boolean
   lastAnswer: unknown
   lastCorrect: boolean
+  lives: number
 }
 
 export interface EngineActions {
@@ -82,6 +83,7 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   const [pendingAdvance, setPendingAdvance] = useState(false)
   const [lastAnswer, setLastAnswer] = useState<unknown>(undefined)
   const [lastCorrect, setLastCorrect] = useState(false)
+  const [lives, setLives] = useState(3)
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const savedQuestionsRef = useRef<Question[] | null>(null)
@@ -137,6 +139,7 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
     setAttempt(0)
     setIsReviewing(false)
     setPendingAdvance(false)
+    setLives(3)
     touchStudyDate()
   }
 
@@ -194,8 +197,13 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   function advanceCard() {
     setPendingAdvance(false)
     if (!lastCorrect) {
-      setPhase('failed')
-      return
+      const newLives = lives - 1
+      setLives(newLives)
+      if (newLives <= 0) {
+        recordGameResult(config.gameId as GameId, rank, score, flawless)
+        setPhase('gameover')
+        return
+      }
     }
     const nextIndex = activeIndex + 1
     if (nextIndex >= stack.length) {
@@ -248,7 +256,7 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   }
 
   return [
-    { phase, rank, rankIndex: rankIdx, stack, activeIndex, reviewIndex, combo, score, timeLeft, maxTime, flawless, attempt, isReviewing, pendingAdvance, lastAnswer, lastCorrect },
+    { phase, rank, rankIndex: rankIdx, stack, activeIndex, reviewIndex, combo, score, timeLeft, maxTime, flawless, attempt, isReviewing, pendingAdvance, lastAnswer, lastCorrect, lives },
     { startGame, submitAnswer, advanceCard, enterReview, exitReview, setReviewIndex, retryStack, quit, proceedAfterLevelup },
   ]
 }

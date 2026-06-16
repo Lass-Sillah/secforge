@@ -44,7 +44,7 @@ export function ExplainBanner({
           {correct ? 'CORRECT' : 'INCORRECT'}{label ? ` — ${label}` : ''}
         </span>
       </div>
-      <p style={{ color: 'var(--c-body)', fontSize: 14, lineHeight: 1.7, margin: 0 }}>{explanation}</p>
+      <p style={{ color: 'var(--c-body)', fontSize: 14, lineHeight: 1.75, margin: 0, fontFamily: 'var(--font-ui)' }}>{explanation}</p>
       <button
         className={`btn-neon ${correct ? 'btn-green' : 'btn-pink'}`}
         style={{ alignSelf: 'flex-end', padding: '8px 28px', fontSize: 13 }}
@@ -111,13 +111,29 @@ export function MenuScreen({
   )
 }
 
+// ─── Lives Display ────────────────────────────────────────────────────────────
+function LivesDisplay({ lives }: { lives: number }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+      {[0, 1, 2].map((i) => (
+        <span key={i} style={{
+          fontSize: 16,
+          color: i < lives ? 'var(--c-pink)' : 'var(--c-border)',
+          textShadow: i < lives ? '0 0 8px var(--c-pink)' : undefined,
+          transition: 'color 0.3s, text-shadow 0.3s',
+        }}>♥</span>
+      ))}
+    </div>
+  )
+}
+
 // ─── Play HUD ─────────────────────────────────────────────────────────────────
 export function PlayHUD({
   state, actions, gameName, gameId, children,
 }: {
   state: EngineState; actions: EngineActions; gameName: string; gameId: string; children: ReactNode
 }) {
-  const { rank, stack, activeIndex, combo, score, timeLeft, maxTime, flawless, pendingAdvance } = state
+  const { rank, stack, activeIndex, combo, score, timeLeft, maxTime, flawless, pendingAdvance, lives } = state
 
   return (
     <div style={PAGE}>
@@ -138,9 +154,12 @@ export function PlayHUD({
               <span style={{ color: 'var(--c-violet)', fontWeight: 700, fontSize: 14 }}>×{combo} <span style={{ fontWeight: 400, fontSize: 11 }}>combo</span></span>
             )}
           </div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: flawless ? 'var(--c-green)' : 'var(--c-pink)' }}>
-            {flawless ? '◆ FLAWLESS' : '✗ BROKEN'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <LivesDisplay lives={lives} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: flawless ? 'var(--c-green)' : 'var(--c-pink)' }}>
+              {flawless ? '◆ FLAWLESS' : '✗ BROKEN'}
+            </span>
+          </div>
         </div>
 
         {/* Stack progress */}
@@ -232,6 +251,31 @@ export function LevelUpScreen({ prevRank, newRank, onContinue }: { prevRank: Ran
         <span style={{ fontSize: 72, fontWeight: 700, color: RANK_COLORS[newRank], textShadow: `0 0 24px ${RANK_COLORS[newRank]}, 0 0 48px ${RANK_COLORS[newRank]}` }}>{newRank}</span>
       </div>
       <button className="btn-neon btn-green" style={{ padding: '10px 32px' }} onClick={onContinue}>▶ NEXT STACK</button>
+    </div>
+  )
+}
+
+// ─── Game Over Screen ─────────────────────────────────────────────────────────
+export function GameOverScreen({ score, rank, onRestart, onQuit }: { score: number; rank: Rank; onRestart: () => void; onQuit: () => void }) {
+  return (
+    <div style={{ ...PAGE, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28 }} className="fade-in">
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ fontSize: 48, marginBottom: 8, letterSpacing: '0.05em' }}>
+          <span style={{ color: 'var(--c-pink)', textShadow: '0 0 20px var(--c-pink)' }}>♥</span>
+          <span style={{ color: 'var(--c-border)', margin: '0 4px' }}>♥</span>
+          <span style={{ color: 'var(--c-border)' }}>♥</span>
+        </div>
+        <h2 style={{ color: 'var(--c-pink)', fontSize: 24, fontWeight: 700, letterSpacing: '0.1em' }}>GAME OVER</h2>
+        <p style={{ color: 'var(--c-dim)', fontSize: 13, marginTop: 10 }}>
+          Fell at Rank <span style={{ color: RANK_COLORS[rank] }}>{rank}</span> — all lives spent.
+        </p>
+        <p style={{ color: 'var(--c-amber)', fontSize: 26, fontWeight: 700, marginTop: 12 }}>{score.toLocaleString()} PTS</p>
+        <p style={{ color: 'var(--c-dim)', fontSize: 11, marginTop: 6, letterSpacing: '0.1em' }}>RUN RECORDED — START AGAIN FROM RANK E</p>
+      </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <button className="btn-neon btn-cyan" style={{ padding: '10px 28px' }} onClick={onRestart}>↺ NEW RUN</button>
+        <button className="btn-neon btn-dim" onClick={onQuit}>← HUB</button>
+      </div>
     </div>
   )
 }
