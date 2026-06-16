@@ -298,6 +298,8 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
 }
 
 function isCorrect(q: Question, answer: unknown): boolean {
+  // acro-match submits true (boolean) for success, false for timeout/failure
+  if ((q as { kind: string }).kind === 'acro-match') return answer === true
   if (q.kind === 'multiple-choice') return answer === q.correctIndex
   if (q.kind === 'drag-order') return (answer as string[]).every((v, i) => v === q.items[i])
   if (q.kind === 'drag-match') {

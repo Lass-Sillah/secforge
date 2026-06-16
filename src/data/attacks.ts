@@ -43,6 +43,17 @@ export const ATTACKS: AttackEntry[] = [
   // Social (continued)
   { name: 'Business Email Compromise', category: 'social', description: 'Impersonates a CEO or vendor via email to authorize fraudulent wire transfers or data releases.' },
   { name: 'Shoulder Surfing',    category: 'social',     description: 'Physically observes a victim\'s screen or keyboard to steal credentials or sensitive information.' },
+  { name: 'AI-Driven Phishing',  category: 'social',     description: 'Uses generative AI to craft hyper-personalized phishing content at scale — including deepfake voice/video calls impersonating executives. Harder to detect than template-based phishing.' },
+  { name: 'Deepfake Vishing',    category: 'social',     description: 'Real-time AI voice cloning of a trusted person (executive, IT admin) to manipulate victims into transferring funds or revealing credentials. Bypasses caller-ID verification.' },
+
+  // Network (additional)
+  { name: 'VLAN Hopping',        category: 'network',    description: 'Attacker on one VLAN sends traffic to another via switch spoofing or double-tagging. Mitigated by disabling dynamic trunk negotiation and using an unused native VLAN.' },
+  { name: 'SSL Stripping',       category: 'network',    description: 'Downgrades an HTTPS connection to HTTP in a MitM position. Mitigated by HSTS (HTTP Strict Transport Security).' },
+  { name: 'Evil Twin AP',        category: 'network',    description: 'Rogue Wi-Fi access point mimicking a legitimate SSID. Victims connect and traffic is intercepted. Paired with deauthentication attacks to force reconnection.' },
+  { name: 'Deauthentication',    category: 'network',    description: 'Sends forged 802.11 deauth frames to disconnect clients from a legitimate AP. Unprotected by default in WPA2; mitigated by WPA3 Protected Management Frames (PMF).' },
+  { name: 'DDoS — Volumetric',   category: 'network',    description: 'Floods bandwidth with traffic (UDP flood, ICMP flood, DNS amplification). Goal: saturate network capacity. Mitigated by upstream scrubbing, CDN, and rate limiting.' },
+  { name: 'DDoS — Protocol',     category: 'network',    description: 'Exploits weaknesses in Layer 3/4 protocols (SYN flood exhausts TCP state tables; Smurf attack uses ICMP broadcast amplification). Targets firewalls and load balancers.' },
+  { name: 'DDoS — Application',  category: 'network',    description: 'Targets Layer 7 services with legitimate-looking requests (HTTP GET/POST flood, Slowloris). Harder to filter — traffic appears valid. Mitigated by WAF rate limiting and CAPTCHA.' },
 
   // Supply chain & advanced
   { name: 'Supply Chain Attack', category: 'network',    description: 'Compromises a trusted vendor or software dependency to inject malicious code into downstream targets.' },

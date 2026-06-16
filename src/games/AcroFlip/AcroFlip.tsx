@@ -358,10 +358,8 @@ function ChoiceCard({
   onSubmit?: (idx: number) => void
   snapshot?: number
 }) {
-  const [picked, setPicked] = useState<number | null>(snapshot ?? null)
   const isReview = snapshot !== undefined
 
-  // highlight **text** as amber
   const renderPrompt = (prompt: string) => {
     const parts = prompt.split('**')
     return (
@@ -384,7 +382,7 @@ function ChoiceCard({
         <p style={{ color: 'var(--c-cyan)', fontWeight: 700, fontSize: 14, margin: 0, lineHeight: 1.6 }}>
           {renderPrompt(question.prompt)}
         </p>
-        {!isReview && <p style={{ color: 'var(--c-dim)', fontSize: 11, margin: '4px 0 0' }}>Select the correct answer</p>}
+        {!isReview && <p style={{ color: 'var(--c-dim)', fontSize: 11, margin: '4px 0 0' }}>Click an answer to submit</p>}
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -396,14 +394,12 @@ function ChoiceCard({
           if (isReview) {
             if (i === question.correctIndex) { border = 'var(--c-green)'; bg = 'rgba(74,222,128,0.07)'; textColor = 'var(--c-green)' }
             else if (i === snapshot && snapshot !== question.correctIndex) { border = 'var(--c-pink)'; bg = 'rgba(244,114,182,0.07)'; textColor = 'var(--c-pink)' }
-          } else if (picked === i) {
-            border = 'var(--c-cyan)'; bg = 'rgba(34,211,238,0.07)'
           }
 
           return (
             <button
               key={i}
-              onClick={() => { if (!isReview) setPicked(i) }}
+              onClick={() => { if (!isReview) onSubmit?.(i) }}
               style={{
                 display: 'flex', alignItems: 'flex-start', gap: 12,
                 padding: '12px 16px', background: bg, border: `1px solid ${border}`,
@@ -415,7 +411,7 @@ function ChoiceCard({
                 fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, minWidth: 24,
                 color: isReview
                   ? (i === question.correctIndex ? 'var(--c-green)' : i === snapshot ? 'var(--c-pink)' : 'var(--c-dim)')
-                  : (picked === i ? 'var(--c-cyan)' : 'var(--c-dim)'),
+                  : 'var(--c-dim)',
               }}>{String.fromCharCode(65 + i)}.</span>
               <span style={{ color: textColor, fontSize: 13, lineHeight: 1.55, flex: 1 }}>{opt}</span>
               {isReview && i === question.correctIndex && <span style={{ color: 'var(--c-green)', marginLeft: 'auto' }}>✓</span>}
@@ -424,17 +420,6 @@ function ChoiceCard({
           )
         })}
       </div>
-
-      {!isReview && (
-        <button
-          className="btn-neon btn-cyan"
-          style={{ alignSelf: 'center', padding: '8px 28px' }}
-          disabled={picked === null}
-          onClick={() => { if (picked !== null) onSubmit?.(picked) }}
-        >
-          ▶ CONFIRM ANSWER
-        </button>
-      )}
     </div>
   )
 }
@@ -563,7 +548,7 @@ export default function AcroFlip() {
         <MatchQuestion
           pairCount={(active as { pairCount: number }).pairCount}
           timeLimit={(active as { timeLimit: number }).timeLimit}
-          onSubmit={(ok) => { setMatchDone(true); actions.submitAnswer(ok ? 1 : -1) }}
+          onSubmit={(ok) => { setMatchDone(true); actions.submitAnswer(ok) }}
         />
       )}
       {isMatchCard && !pendingAdvance && matchDone && (

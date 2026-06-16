@@ -23,6 +23,7 @@ const defaultGlobalStats = (): GlobalStats => ({
     'wireless-config': defaultRecord(),
     'harden-target':   defaultRecord(),
     'acro-flip':       defaultRecord(),
+    'compliance-grid': defaultRecord(),
   },
   studyDates: [],
 })

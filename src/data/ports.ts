@@ -76,6 +76,18 @@ export const PORT_LIST: PortEntry[] = [
   { protocol: 'SNMP',          port: '161/162',note: 'Simple Network Mgmt – 161=query 162=trap',            category: 'mgmt' },
   { protocol: 'Syslog',        port: 514,      note: 'System log forwarding – UDP, cleartext. Use Syslog-TLS', category: 'mgmt', secureReplacement: 'Syslog-TLS' },
 
+  // VPN tunneling protocols
+  { protocol: 'L2TP',          port: 1701,     note: 'Layer 2 Tunneling Protocol — UDP; needs IPSec for encryption',   category: 'secure' },
+  { protocol: 'PPTP',          port: 1723,     note: 'Point-to-Point Tunneling — DEPRECATED; uses MPPE (weak). Never use.', category: 'mgmt', secureReplacement: 'L2TP/IPSec' },
+
+  // Windows / RPC
+  { protocol: 'RPC/DCOM',      port: 135,      note: 'Windows Remote Procedure Call endpoint mapper',        category: 'mgmt' },
+
+  // Modern / emerging
+  { protocol: 'Diameter',      port: 3868,     note: 'RADIUS successor — TCP-based AAA protocol, more reliable', category: 'auth' },
+  { protocol: 'SRTP',          port: 5004,     note: 'Secure Real-time Transport Protocol — encrypted VoIP/video', category: 'secure' },
+  { protocol: 'HTTP-Alt',      port: 8080,     note: 'HTTP alternate port — proxy servers, dev environments, sometimes used by malware to evade filtering', category: 'web' },
+
   // Database
   { protocol: 'MS-SQL',        port: 1433,     note: 'Microsoft SQL Server',                                 category: 'db' },
   { protocol: 'MySQL',         port: 3306,     note: 'MySQL / MariaDB database',                             category: 'db' },

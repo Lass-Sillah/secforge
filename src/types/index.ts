@@ -131,6 +131,7 @@ export type GameId =
   | 'wireless-config'
   | 'harden-target'
   | 'acro-flip'
+  | 'compliance-grid'
 
 export interface GlobalStats {
   records: Record<GameId, GameRecord>

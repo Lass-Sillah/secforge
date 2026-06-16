@@ -29,8 +29,9 @@ const GAMES: GameMeta[] = [
   // Row 4 — Wireless & hardening
   { id: 'wireless-config', name: 'WIRELESS CONFIG',  subtitle: 'WPA2/WPA3, EAP-TLS, PEAP, 802.1X — pick the right one', domains: 'Domain 3',  route: '/wireless-config', color: 'var(--c-cyan)',   icon: '◈' },
   { id: 'harden-target',   name: 'HARDEN TARGET',    subtitle: 'Audit running services; flag every misconfiguration',  domains: 'Domain 3 & 4', route: '/harden-target',   color: 'var(--c-orange)', icon: '◉' },
-  // Row 5 — Acronyms
-  { id: 'acro-flip',       name: 'ACRO FLIP',        subtitle: 'Memory card pairs + fill-in-the-blank — master every SY0-701 acronym', domains: 'All Domains', route: '/acro-flip', color: 'var(--c-violet)', icon: '◑' },
+  // Row 5 — Domain 5 & Acronyms
+  { id: 'compliance-grid', name: 'COMPLIANCE GRID',  subtitle: 'GRC scenarios: risk formulas, GDPR/HIPAA/SOX, NIST/ISO frameworks, RTO/RPO/BCP/DR', domains: 'Domain 5', route: '/compliance-grid', color: 'var(--c-amber)', icon: '◧' },
+  { id: 'acro-flip',       name: 'ACRO FLIP',        subtitle: 'Match boards + fill-in-the-blank — master every SY0-701 acronym', domains: 'All Domains', route: '/acro-flip', color: 'var(--c-violet)', icon: '◑' },
 ]
 
 const ASCII_BANNER = `
@@ -48,7 +49,7 @@ const DOMAIN_COVERAGE = [
   { domain: 'Domain 2 (22%) — Threats, Vulns & Mitigations',     pct: 80,  color: 'var(--c-pink)',   note: 'AttackMatch (40 attacks) + LogHunter (14 IoC scenarios)' },
   { domain: 'Domain 3 (18%) — Security Architecture',            pct: 90,  color: 'var(--c-cyan)',   note: 'FirewallForge, NetZones, PKI Lab, Crypto, Wireless, Ports' },
   { domain: 'Domain 4 (28%) — Security Operations',              pct: 75,  color: 'var(--c-green)',  note: 'LogHunter, IncidentOrder, HardenTarget — largest exam domain' },
-  { domain: 'Domain 5 (20%) — Program Management & Oversight',   pct: 15,  color: 'var(--c-violet)', note: 'Governance / compliance — primarily MC, not PBQ' },
+  { domain: 'Domain 5 (20%) — Program Management & Oversight',   pct: 75,  color: 'var(--c-violet)', note: 'ComplianceGrid: risk formulas, GRC frameworks, regulations, BCP/DR' },
 ]
 
 export function Hub() {
@@ -86,7 +87,7 @@ export function Hub() {
             {ASCII_BANNER}
           </pre>
           <p style={{ color: 'var(--c-dim)', fontSize: 11, marginTop: 12, letterSpacing: '0.18em', fontFamily: 'var(--font-mono)' }}>
-            SY0-701 PBQ TRAINER — 12 MODULES — 3 LIVES PER RUN
+            SY0-701 PBQ TRAINER — 13 MODULES — 3 LIVES PER RUN
           </p>
         </div>
 
@@ -153,7 +154,7 @@ export function Hub() {
             PBQ COVERAGE — SY0-701
           </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '6px 24px' }}>
-            {['Ports & Protocols', 'Firewall / ACL Rules', 'Network Zone Placement', 'Log Analysis / IoC', 'Attack Identification', 'Incident Response (PICERL)', 'Order of Volatility', 'Access Control Models', 'Cryptography Selection', 'PKI / Certificate Types', 'TLS Handshake Sequence', 'Wireless Security (WPA/EAP)', 'Server & Endpoint Hardening', 'SY0-701 Acronyms (Memory + Fill-in)'].map((t) => (
+            {['Ports & Protocols', 'Firewall / ACL Rules', 'Network Zone Placement', 'Log Analysis / IoC', 'Attack Identification', 'Incident Response (PICERL)', 'Order of Volatility', 'Access Control Models', 'Cryptography Selection', 'PKI / Certificate Types', 'TLS Handshake Sequence', 'Wireless Security (WPA/EAP)', 'Server & Endpoint Hardening', 'Risk Formulas (SLE/ALE/ARO)', 'GRC Frameworks (NIST/ISO/CIS/SOC2)', 'Regulations (GDPR/HIPAA/SOX/PCI)', 'BCP/DR (RTO/RPO/MTTR/RAID/Backups)', 'SY0-701 Acronyms (Match + Fill-in)'].map((t) => (
               <span key={t} style={{ color: 'var(--c-dim)', fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ color: 'var(--c-green)', fontSize: 10 }}>✓</span> {t}
               </span>
@@ -163,7 +164,7 @@ export function Hub() {
 
         {/* Footer */}
         <div style={{ textAlign: 'center', color: 'var(--c-dim)', fontSize: 11, borderTop: '1px solid var(--c-border)', paddingTop: 16, fontFamily: 'var(--font-mono)', letterSpacing: '0.08em' }}>
-          SECFORGE v3.0 — CompTIA Security+ SY0-701 — 12 modules — 3 lives per run — All data runs client-side
+          SECFORGE v3.1 — CompTIA Security+ SY0-701 — 13 modules — 3 lives per run — All data runs client-side
         </div>
       </div>
     </div>
