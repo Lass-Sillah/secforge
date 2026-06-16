@@ -112,17 +112,24 @@ export function MenuScreen({
 }
 
 // ─── Lives Display ────────────────────────────────────────────────────────────
-function LivesDisplay({ lives }: { lives: number }) {
+function LivesDisplay({ lives, timedOut }: { lives: number; timedOut: boolean }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-      {[0, 1, 2].map((i) => (
-        <span key={i} style={{
-          fontSize: 16,
-          color: i < lives ? 'var(--c-pink)' : 'var(--c-border)',
-          textShadow: i < lives ? '0 0 8px var(--c-pink)' : undefined,
-          transition: 'color 0.3s, text-shadow 0.3s',
-        }}>♥</span>
-      ))}
+      {[0, 1, 2].map((i) => {
+        const filled = i < lives
+        // The heart that was just lost flashes when timedOut
+        const justLost = timedOut && i === lives
+        return (
+          <span key={i} style={{
+            fontSize: 16,
+            color: justLost ? 'var(--c-pink)' : filled ? 'var(--c-pink)' : 'var(--c-border)',
+            textShadow: filled || justLost ? '0 0 8px var(--c-pink)' : undefined,
+            opacity: justLost ? 0.3 : 1,
+            transition: 'color 0.25s, opacity 0.25s, text-shadow 0.25s',
+            animation: justLost ? 'pulseGlow 0.35s ease-in-out 2' : undefined,
+          }}>♥</span>
+        )
+      })}
     </div>
   )
 }
@@ -133,7 +140,7 @@ export function PlayHUD({
 }: {
   state: EngineState; actions: EngineActions; gameName: string; gameId: string; children: ReactNode
 }) {
-  const { rank, stack, activeIndex, combo, score, timeLeft, maxTime, flawless, pendingAdvance, lives } = state
+  const { rank, stack, activeIndex, combo, score, timeLeft, maxTime, flawless, pendingAdvance, lives, timedOut } = state
 
   return (
     <div style={PAGE}>
@@ -155,7 +162,7 @@ export function PlayHUD({
             )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <LivesDisplay lives={lives} />
+            <LivesDisplay lives={lives} timedOut={timedOut} />
             <span style={{ fontSize: 13, fontWeight: 700, color: flawless ? 'var(--c-green)' : 'var(--c-pink)' }}>
               {flawless ? '◆ FLAWLESS' : '✗ BROKEN'}
             </span>

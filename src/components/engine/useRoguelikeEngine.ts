@@ -42,16 +42,16 @@ export interface EngineState {
   reviewIndex: number
   combo: number
   score: number
-  timeLeft: number
-  maxTime: number
+  timeLeft: number     // seconds remaining (float, for smooth bar)
+  maxTime: number      // seconds total
   flawless: boolean
   attempt: number
   isReviewing: boolean
-  // After submitting an answer, show explanation before advancing
   pendingAdvance: boolean
   lastAnswer: unknown
   lastCorrect: boolean
   lives: number
+  timedOut: boolean    // true for a brief flash when timeout heart is lost
 }
 
 export interface EngineActions {
@@ -84,8 +84,10 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   const [lastAnswer, setLastAnswer] = useState<unknown>(undefined)
   const [lastCorrect, setLastCorrect] = useState(false)
   const [lives, setLives] = useState(3)
+  const [timedOut, setTimedOut] = useState(false)
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef    = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerEndRef = useRef<number>(0)   // absolute epoch ms when timer hits 0
   const savedQuestionsRef = useRef<Question[] | null>(null)
   const rankIdx = RANKS.indexOf(rank)
   const maxTime = config.timerByRank[rank]
@@ -98,19 +100,25 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   const startTimer = useCallback(() => {
     clearTimer()
     if (maxTime <= 0 || isReviewing || pendingAdvance) return
+    const endAt = Date.now() + maxTime * 1000
+    timerEndRef.current = endAt
     setTimeLeft(maxTime)
+    // 50ms tick → smooth bar (20fps), integer seconds display
     timerRef.current = setInterval(() => {
-      setTimeLeft((t) => {
-        if (t <= 1) { clearTimer(); return 0 }
-        return t - 1
-      })
-    }, 1000)
+      const remaining = (timerEndRef.current - Date.now()) / 1000
+      if (remaining <= 0) {
+        clearTimer()
+        setTimeLeft(0)
+      } else {
+        setTimeLeft(remaining)
+      }
+    }, 50)
   }, [maxTime, isReviewing, pendingAdvance])
 
-  // Timeout = miss
+  // Timeout → instant heart loss, no explanation popup
   useEffect(() => {
-    if (phase !== 'playing' || isReviewing || maxTime <= 0 || pendingAdvance) return
-    if (timeLeft === 0) handleMiss(undefined)
+    if (phase !== 'playing' || isReviewing || maxTime <= 0 || pendingAdvance || timedOut) return
+    if (timeLeft <= 0) handleTimeout()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft])
 
@@ -149,18 +157,46 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeIndex, phase, isReviewing, pendingAdvance])
 
-  function handleMiss(answer: unknown) {
+  // Timeout: instant heart loss, no explanation popup — just advance
+  function handleTimeout() {
     clearTimer()
     setFlawless(false)
-    setLastAnswer(answer)
-    setLastCorrect(false)
+    setCombo(0)
     setStack((prev) =>
       prev.map((c, i) =>
-        i === activeIndex ? { ...c, state: 'missed', answerSnapshot: answer } : { ...c, state: 'pending' }
+        i === activeIndex ? { ...c, state: 'missed', answerSnapshot: undefined } : c
       )
     )
-    setCombo(0)
-    setPendingAdvance(true) // show explanation before failed screen
+    setTimedOut(true)
+
+    const newLives = lives - 1
+    setLives(newLives)
+
+    if (newLives <= 0) {
+      // record score and go to gameover after a brief flash
+      setTimeout(() => {
+        recordGameResult(config.gameId as GameId, rank, score, flawless)
+        setPhase('gameover')
+        setTimedOut(false)
+      }, 700)
+      return
+    }
+
+    // Flash the heart for 700ms then auto-advance to next card
+    setTimeout(() => {
+      setTimedOut(false)
+      const nextIndex = activeIndex + 1
+      if (nextIndex >= stack.length) {
+        if (rankIdx >= RANKS.length - 1) {
+          recordGameResult(config.gameId as GameId, rank, score, flawless)
+          setPhase('victory')
+        } else {
+          setPhase('levelup')
+        }
+      } else {
+        setActiveIndex(nextIndex)
+      }
+    }, 700)
   }
 
   function submitAnswer(answer: unknown) {
@@ -256,7 +292,7 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   }
 
   return [
-    { phase, rank, rankIndex: rankIdx, stack, activeIndex, reviewIndex, combo, score, timeLeft, maxTime, flawless, attempt, isReviewing, pendingAdvance, lastAnswer, lastCorrect, lives },
+    { phase, rank, rankIndex: rankIdx, stack, activeIndex, reviewIndex, combo, score, timeLeft, maxTime, flawless, attempt, isReviewing, pendingAdvance, lastAnswer, lastCorrect, lives, timedOut },
     { startGame, submitAnswer, advanceCard, enterReview, exitReview, setReviewIndex, retryStack, quit, proceedAfterLevelup },
   ]
 }

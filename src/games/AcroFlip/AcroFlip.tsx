@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { MultipleChoiceQuestion, Rank } from '../../types'
 import { RANKS } from '../../types'
@@ -11,19 +11,19 @@ import { ACRONYMS_UNIQUE } from '../../data/acronyms'
 
 const GAME_ID   = 'acro-flip'
 const GAME_NAME = 'ACRO FLIP'
-const DESC      = 'Master Security+ acronyms through memory card matching and fill-in-the-blank challenges. Flip pairs, spell out expansions, identify acronyms from definitions.'
-const TIMER: Record<string, number> = { E: 0,  D: 90, C: 75, B: 60, A: 50, S: 40 }
-const STACK: Record<string, number> = { E: 4,  D: 5,  C: 6,  B: 7,  A: 8,  S: 10 }
+const DESC      = 'Master Security+ acronyms. Fill-in-the-blank MCQ at every rank, plus a live match board at Rank C+ — click an acronym, then click its expansion to clear pairs before time runs out.'
+
+// Timer per rank — tightens significantly as you climb
+const TIMER: Record<string, number> = { E: 0, D: 70, C: 55, B: 42, A: 30, S: 20 }
+const STACK: Record<string, number> = { E: 4, D: 5,  C: 6,  B: 7,  A: 8,  S: 10 }
 
 const DOMAIN_COLORS: Record<string, string> = {
-  D1: 'var(--c-blue)',
-  D2: 'var(--c-pink)',
-  D3: 'var(--c-cyan)',
-  D4: 'var(--c-green)',
-  D5: 'var(--c-violet)',
+  D1: 'var(--c-blue)', D2: 'var(--c-pink)', D3: 'var(--c-cyan)',
+  D4: 'var(--c-green)', D5: 'var(--c-violet)',
 }
 const DOMAIN_LABELS: Record<string, string> = {
-  D1: 'D1 General', D2: 'D2 Threats', D3: 'D3 Architecture', D4: 'D4 Operations', D5: 'D5 Governance',
+  D1: 'D1 General', D2: 'D2 Threats', D3: 'D3 Architecture',
+  D4: 'D4 Operations', D5: 'D5 Governance',
 }
 
 function shuffle<T>(arr: T[]): T[] {
@@ -35,7 +35,7 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
-// ─── Question generators ───────────────────────────────────────────────────────
+// ─── Multiple-choice fill-in-the-blank ────────────────────────────────────────
 
 function makeMultipleChoiceQ(index: number, mode: 'expansion' | 'acronym'): MultipleChoiceQuestion {
   const pool = shuffle([...ACRONYMS_UNIQUE])
@@ -68,161 +68,210 @@ function generateStack(rank: Rank, attempt: number): MultipleChoiceQuestion[] {
   )
 }
 
-// ─── Memory Card Flip Mini-game ───────────────────────────────────────────────
+// ─── Quizlet-style Match Board ─────────────────────────────────────────────────
 
-interface MemCard {
-  id: string
+interface Tile {
+  id: string       // unique tile id
+  pairId: string   // acronym string — same for the two tiles in a pair
   text: string
-  pairId: string
   side: 'acronym' | 'expansion'
 }
 
-function MemoryFlipGame({ onComplete }: { onComplete: (success: boolean) => void }) {
-  const pairCount = 6
+type TileState = 'idle' | 'selected' | 'matched' | 'wrong'
+
+interface MatchBoardProps {
+  pairCount: number
+  timeLimit: number      // seconds
+  onComplete: (success: boolean, pct: number) => void  // pct = pairs matched / total
+}
+
+function MatchBoard({ pairCount, timeLimit, onComplete }: MatchBoardProps) {
   const pairs = shuffle([...ACRONYMS_UNIQUE]).slice(0, pairCount)
 
-  const [cards] = useState<MemCard[]>(() =>
-    shuffle(
-      pairs.flatMap((p) => [
-        { id: `${p.acronym}-a`, text: p.acronym, pairId: p.acronym, side: 'acronym' as const },
-        { id: `${p.acronym}-e`, text: p.expansion, pairId: p.acronym, side: 'expansion' as const },
-      ])
-    )
+  const [tiles] = useState<Tile[]>(() =>
+    shuffle(pairs.flatMap((p) => [
+      { id: `${p.acronym}-A`, pairId: p.acronym, text: p.acronym, side: 'acronym' as const },
+      { id: `${p.acronym}-E`, pairId: p.acronym, text: p.expansion, side: 'expansion' as const },
+    ]))
   )
 
-  const [flipped, setFlipped] = useState<Set<string>>(new Set())
-  const [matched, setMatched] = useState<Set<string>>(new Set())
-  const [selected, setSelected] = useState<MemCard | null>(null)
+  const [tileStates, setTileStates] = useState<Record<string, TileState>>(() =>
+    Object.fromEntries(tiles.map((t) => [t.id, 'idle']))
+  )
+  const [selected, setSelected] = useState<Tile | null>(null)
   const [locked, setLocked] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(90)
-  const [shake, setShake] = useState<string | null>(null)
+  const [matchedCount, setMatchedCount] = useState(0)
+  const [timeLeft, setTimeLeft] = useState(timeLimit)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const doneRef  = useRef(false)
 
-  // timer
+  const finish = useCallback((success: boolean) => {
+    if (doneRef.current) return
+    doneRef.current = true
+    if (timerRef.current) clearInterval(timerRef.current)
+    onComplete(success, matchedCount / pairCount)
+  }, [matchedCount, pairCount, onComplete])
+
+  // countdown
   useEffect(() => {
-    if (matched.size === cards.length) return
-    if (timeLeft <= 0) { onComplete(false); return }
-    const t = setTimeout(() => setTimeLeft((s) => s - 1), 1000)
-    return () => clearTimeout(t)
-  }, [timeLeft, matched.size, cards.length, onComplete])
+    if (timeLimit <= 0) return
+    const endAt = Date.now() + timeLimit * 1000
+    timerRef.current = setInterval(() => {
+      const rem = (endAt - Date.now()) / 1000
+      if (rem <= 0) {
+        clearInterval(timerRef.current!)
+        setTimeLeft(0)
+        finish(false)
+      } else {
+        setTimeLeft(rem)
+      }
+    }, 50)
+    return () => { if (timerRef.current) clearInterval(timerRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // success
+  // win
   useEffect(() => {
-    if (matched.size === cards.length && cards.length > 0) {
-      setTimeout(() => onComplete(true), 500)
-    }
-  }, [matched.size, cards.length, onComplete])
+    if (matchedCount >= pairCount) finish(true)
+  }, [matchedCount, pairCount, finish])
 
-  const handleFlip = useCallback((card: MemCard) => {
-    if (locked || matched.has(card.pairId) || flipped.has(card.id)) return
-
-    const newFlipped = new Set(flipped)
-    newFlipped.add(card.id)
-    setFlipped(newFlipped)
+  const handleTile = useCallback((tile: Tile) => {
+    if (locked || tileStates[tile.id] === 'matched' || tileStates[tile.id] === 'wrong') return
+    if (doneRef.current) return
 
     if (!selected) {
-      setSelected(card)
+      setTileStates((prev) => ({ ...prev, [tile.id]: 'selected' }))
+      setSelected(tile)
       return
     }
 
-    // second card picked
-    setLocked(true)
-    if (selected.pairId === card.pairId && selected.id !== card.id) {
-      // match!
-      setTimeout(() => {
-        setMatched((prev) => new Set([...prev, card.pairId]))
-        setSelected(null)
-        setLocked(false)
-      }, 500)
-    } else {
-      // no match — flip back after delay
-      setShake(card.pairId)
-      setTimeout(() => {
-        setFlipped((prev) => {
-          const next = new Set(prev)
-          next.delete(selected.id)
-          next.delete(card.id)
-          return next
-        })
-        setSelected(null)
-        setLocked(false)
-        setShake(null)
-      }, 900)
+    // Can't click the same tile
+    if (selected.id === tile.id) {
+      setTileStates((prev) => ({ ...prev, [tile.id]: 'idle' }))
+      setSelected(null)
+      return
     }
-  }, [locked, matched, flipped, selected])
 
-  const pct = (timeLeft / 90) * 100
-  const timerColor = pct > 50 ? 'var(--c-green)' : pct > 25 ? 'var(--c-amber)' : 'var(--c-pink)'
+    setLocked(true)
+
+    if (selected.pairId === tile.pairId) {
+      // correct match
+      setTileStates((prev) => ({
+        ...prev,
+        [selected.id]: 'matched',
+        [tile.id]: 'matched',
+      }))
+      setMatchedCount((c) => c + 1)
+      setSelected(null)
+      setLocked(false)
+    } else {
+      // wrong match — flash red then reset
+      setTileStates((prev) => ({
+        ...prev,
+        [selected.id]: 'wrong',
+        [tile.id]: 'wrong',
+      }))
+      setTimeout(() => {
+        setTileStates((prev) => ({
+          ...prev,
+          [selected.id]: 'idle',
+          [tile.id]: 'idle',
+        }))
+        setSelected(null)
+        setLocked(false)
+      }, 600)
+    }
+  }, [locked, tileStates, selected])
+
+  const pct    = timeLimit > 0 ? Math.max(0, Math.min(100, (timeLeft / timeLimit) * 100)) : 100
+  const tColor = pct > 50 ? 'var(--c-green)' : pct > 25 ? 'var(--c-amber)' : 'var(--c-pink)'
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
       {/* Header */}
-      <div style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderLeft: '3px solid var(--c-cyan)', borderRadius: 6, padding: '12px 16px' }}>
-        <p style={{ color: 'var(--c-cyan)', fontWeight: 700, fontSize: 14, margin: 0 }}>MEMORY FLIP — Find all {pairCount} matching pairs</p>
-        <p style={{ color: 'var(--c-dim)', fontSize: 11, margin: '4px 0 0' }}>Click a card to flip it. Match each acronym to its full expansion.</p>
+      <div style={{
+        background: 'var(--c-surface)', border: '1px solid var(--c-border)',
+        borderLeft: '3px solid var(--c-violet)', borderRadius: 6, padding: '12px 16px',
+      }}>
+        <p style={{ color: 'var(--c-violet)', fontWeight: 700, fontSize: 14, margin: 0 }}>
+          ACRO MATCH — Click an acronym, then its expansion
+        </p>
+        <p style={{ color: 'var(--c-dim)', fontSize: 11, margin: '4px 0 0' }}>
+          Match all {pairCount} pairs to clear the board · {matchedCount}/{pairCount} cleared
+        </p>
       </div>
 
-      {/* Timer */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ color: timerColor, fontWeight: 700, fontSize: 13, minWidth: 28 }}>{timeLeft}s</span>
-        <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
-          <div style={{ height: '100%', width: `${pct}%`, background: timerColor, borderRadius: 3, transition: 'width 1s linear, background 0.5s' }} />
+      {/* Timer bar */}
+      {timeLimit > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ color: tColor, fontWeight: 700, fontSize: 12, fontFamily: 'var(--font-mono)', minWidth: 30 }}>
+            {Math.ceil(timeLeft)}s
+          </span>
+          <div style={{ flex: 1, height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', width: `${pct}%`, background: tColor,
+              borderRadius: 3, boxShadow: `0 0 8px ${tColor}`,
+            }} />
+          </div>
         </div>
-        <span style={{ color: 'var(--c-dim)', fontSize: 11 }}>{matched.size / 2}/{pairCount} matched</span>
-      </div>
+      )}
 
-      {/* Card grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-        {cards.map((card) => {
-          const isFlipped = flipped.has(card.id) || matched.has(card.pairId)
-          const isMatched = matched.has(card.pairId)
-          const isShaking = shake === card.pairId && flipped.has(card.id)
+      {/* Tile grid */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+        gap: 8,
+      }}>
+        {tiles.map((tile) => {
+          const st = tileStates[tile.id]
+          const isAcro = tile.side === 'acronym'
+
+          let bg = 'var(--c-surface)'
+          let border = 'var(--c-border)'
+          let textColor = isAcro ? 'var(--c-cyan)' : 'var(--c-body)'
+          let opacity = 1
+          let transform = 'none'
+
+          if (st === 'selected') {
+            bg = isAcro ? 'rgba(34,211,238,0.1)' : 'rgba(167,139,250,0.1)'
+            border = isAcro ? 'var(--c-cyan)' : 'var(--c-violet)'
+            transform = 'scale(1.02)'
+          } else if (st === 'matched') {
+            bg = 'rgba(74,222,128,0.08)'
+            border = 'var(--c-green)'
+            textColor = 'var(--c-green)'
+            opacity = 0.55
+          } else if (st === 'wrong') {
+            bg = 'rgba(244,114,182,0.1)'
+            border = 'var(--c-pink)'
+            textColor = 'var(--c-pink)'
+          }
 
           return (
             <button
-              key={card.id}
-              onClick={() => handleFlip(card)}
+              key={tile.id}
+              onClick={() => handleTile(tile)}
+              disabled={st === 'matched'}
               style={{
-                position: 'relative',
-                height: 80,
-                background: isMatched
-                  ? 'rgba(74,222,128,0.1)'
-                  : isFlipped
-                  ? 'var(--c-surface)'
-                  : 'rgba(34,211,238,0.06)',
-                border: `1px solid ${isMatched ? 'var(--c-green)' : isFlipped ? (card.side === 'acronym' ? 'var(--c-cyan)' : 'var(--c-violet)') : 'var(--c-border)'}`,
+                padding: '10px 12px',
+                minHeight: 56,
+                background: bg,
+                border: `1px solid ${border}`,
                 borderRadius: 6,
-                cursor: isMatched || locked ? 'default' : 'pointer',
-                padding: 8,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
+                cursor: st === 'matched' ? 'default' : 'pointer',
                 textAlign: 'center',
-                fontFamily: 'inherit',
-                transition: 'all 0.18s',
-                animation: isShaking ? 'shakeCard 0.4s ease' : undefined,
-                boxShadow: isMatched ? '0 0 8px rgba(74,222,128,0.2)' : undefined,
+                fontFamily: isAcro ? 'var(--font-mono)' : 'var(--font-ui)',
+                fontSize: isAcro ? 15 : 11,
+                fontWeight: isAcro ? 700 : 400,
+                color: textColor,
+                lineHeight: 1.4,
+                opacity,
+                transform,
+                transition: 'all 0.15s ease',
+                wordBreak: 'break-word',
               }}
             >
-              {isFlipped ? (
-                <div>
-                  {card.side === 'acronym' && (
-                    <p style={{ color: 'var(--c-dim)', fontSize: 8, letterSpacing: '0.1em', margin: '0 0 2px' }}>ACRONYM</p>
-                  )}
-                  <p style={{
-                    color: isMatched ? 'var(--c-green)' : card.side === 'acronym' ? 'var(--c-cyan)' : 'var(--c-violet)',
-                    fontWeight: card.side === 'acronym' ? 700 : 400,
-                    fontSize: card.side === 'acronym' ? 16 : 10,
-                    lineHeight: 1.3,
-                    margin: 0,
-                    wordBreak: 'break-word',
-                  }}>
-                    {card.text}
-                  </p>
-                  {isMatched && <span style={{ fontSize: 14, color: 'var(--c-green)' }}>✓</span>}
-                </div>
-              ) : (
-                <span style={{ fontSize: 22, color: 'var(--c-border)', userSelect: 'none' }}>?</span>
-              )}
+              {st === 'matched' ? '✓' : tile.text}
             </button>
           )
         })}
@@ -231,7 +280,7 @@ function MemoryFlipGame({ onComplete }: { onComplete: (success: boolean) => void
   )
 }
 
-// ─── Multiple Choice Question UI ───────────────────────────────────────────────
+// ─── MCQ card ────────────────────────────────────────────────────────────────
 
 function ChoiceCard({
   question, onSubmit, snapshot,
@@ -243,23 +292,32 @@ function ChoiceCard({
   const [picked, setPicked] = useState<number | null>(snapshot ?? null)
   const isReview = snapshot !== undefined
 
-  const promptParts = question.prompt.split('**')
+  // highlight **text** as amber
+  const renderPrompt = (prompt: string) => {
+    const parts = prompt.split('**')
+    return (
+      <span>
+        {parts.map((p, i) =>
+          i % 2 === 1
+            ? <span key={i} style={{ color: 'var(--c-amber)', letterSpacing: '0.06em' }}>{p}</span>
+            : <span key={i}>{p}</span>
+        )}
+      </span>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      {/* Prompt */}
-      <div style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderLeft: '3px solid var(--c-cyan)', borderRadius: 6, padding: '14px 18px' }}>
+      <div style={{
+        background: 'var(--c-surface)', border: '1px solid var(--c-border)',
+        borderLeft: '3px solid var(--c-cyan)', borderRadius: 6, padding: '14px 18px',
+      }}>
         <p style={{ color: 'var(--c-cyan)', fontWeight: 700, fontSize: 14, margin: 0, lineHeight: 1.6 }}>
-          {promptParts.map((part, i) =>
-            i % 2 === 1
-              ? <span key={i} style={{ color: 'var(--c-amber)', letterSpacing: '0.06em' }}>{part}</span>
-              : <span key={i}>{part}</span>
-          )}
+          {renderPrompt(question.prompt)}
         </p>
         {!isReview && <p style={{ color: 'var(--c-dim)', fontSize: 11, margin: '4px 0 0' }}>Select the correct answer</p>}
       </div>
 
-      {/* Options */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {question.options.map((opt, i) => {
           let border = 'var(--c-border)'
@@ -278,23 +336,21 @@ function ChoiceCard({
               key={i}
               onClick={() => { if (!isReview) setPicked(i) }}
               style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '12px 16px',
-                background: bg, border: `1px solid ${border}`,
+                display: 'flex', alignItems: 'flex-start', gap: 12,
+                padding: '12px 16px', background: bg, border: `1px solid ${border}`,
                 borderRadius: 6, cursor: isReview ? 'default' : 'pointer',
-                textAlign: 'left', fontFamily: 'inherit',
-                transition: 'all 0.12s',
+                textAlign: 'left', fontFamily: 'var(--font-ui)', transition: 'all 0.12s',
               }}
             >
               <span style={{
-                fontWeight: 700, fontSize: 13, minWidth: 24, color:
-                  isReview
-                    ? (i === question.correctIndex ? 'var(--c-green)' : i === snapshot ? 'var(--c-pink)' : 'var(--c-dim)')
-                    : (picked === i ? 'var(--c-cyan)' : 'var(--c-dim)'),
+                fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 13, minWidth: 24,
+                color: isReview
+                  ? (i === question.correctIndex ? 'var(--c-green)' : i === snapshot ? 'var(--c-pink)' : 'var(--c-dim)')
+                  : (picked === i ? 'var(--c-cyan)' : 'var(--c-dim)'),
               }}>{String.fromCharCode(65 + i)}.</span>
-              <span style={{ color: textColor, fontSize: 13, lineHeight: 1.5 }}>{opt}</span>
-              {isReview && i === question.correctIndex && <span style={{ marginLeft: 'auto', color: 'var(--c-green)' }}>✓</span>}
-              {isReview && i === snapshot && snapshot !== question.correctIndex && <span style={{ marginLeft: 'auto', color: 'var(--c-pink)' }}>✗</span>}
+              <span style={{ color: textColor, fontSize: 13, lineHeight: 1.55, flex: 1 }}>{opt}</span>
+              {isReview && i === question.correctIndex && <span style={{ color: 'var(--c-green)', marginLeft: 'auto' }}>✓</span>}
+              {isReview && i === snapshot && snapshot !== question.correctIndex && <span style={{ color: 'var(--c-pink)', marginLeft: 'auto' }}>✗</span>}
             </button>
           )
         })}
@@ -314,58 +370,55 @@ function ChoiceCard({
   )
 }
 
-// ─── Memory Flip as a scored question ─────────────────────────────────────────
+// ─── Match question wrapper (plugs into engine as a single question) ────────
 
-function MemoryFlipQuestion({
-  onSubmit,
-}: {
+function MatchQuestion({ pairCount, timeLimit, onSubmit }: {
+  pairCount: number
+  timeLimit: number
   onSubmit: (correct: boolean) => void
 }) {
   const [done, setDone] = useState(false)
-  const [result, setResult] = useState<boolean | null>(null)
 
   const handleComplete = useCallback((success: boolean) => {
     if (done) return
     setDone(true)
-    setResult(success)
-    setTimeout(() => onSubmit(success), 400)
+    // brief delay so the win/lose state is visible before advancing
+    setTimeout(() => onSubmit(success), 500)
   }, [done, onSubmit])
 
-  return (
-    <div>
-      <MemoryFlipGame onComplete={handleComplete} />
-      {done && result !== null && (
-        <div style={{ marginTop: 12, textAlign: 'center', color: result ? 'var(--c-green)' : 'var(--c-pink)', fontWeight: 700 }}>
-          {result ? '✓ ALL PAIRS MATCHED!' : '✗ TIME UP!'}
-        </div>
-      )}
-    </div>
-  )
+  return <MatchBoard pairCount={pairCount} timeLimit={timeLimit} onComplete={handleComplete} />
 }
 
-// ─── Acro Flip game entry point ───────────────────────────────────────────────
+// ─── Question factory ─────────────────────────────────────────────────────────
 
-type AcroQuestion =
+type AcroQ =
   | MultipleChoiceQuestion
-  | { id: string; kind: 'memory-flip'; prompt: string; explanation: string }
+  | { id: string; kind: 'acro-match'; prompt: string; explanation: string; pairCount: number; timeLimit: number }
 
-function generateAcroStack(rank: Rank, attempt: number): AcroQuestion[] {
-  const count = STACK[rank]
-  const mcCount = Math.max(1, count - (rank >= 'C' ? 1 : 0))
-  const mcQuestions = generateStack(rank, attempt).slice(0, mcCount)
-  const result: AcroQuestion[] = [...mcQuestions]
+function generateAcroStack(rank: Rank, attempt: number): AcroQ[] {
+  const mcQuestions = generateStack(rank, attempt) as AcroQ[]
 
-  // insert a memory flip round at rank C+
+  // Insert a match board at Rank C and above (every other card)
   if (rank >= 'C') {
-    result.splice(Math.floor(mcCount / 2), 0, {
-      id: `af-flip-${attempt}`,
-      kind: 'memory-flip',
-      prompt: 'Find all matching acronym/expansion pairs before time runs out.',
-      explanation: 'Memory flip: acronyms paired with their full expansions. Fastest way to drill recognition.',
-    } as AcroQuestion)
+    const pairCount = rank >= 'A' ? 8 : 6
+    const timeLimit = rank === 'S' ? 45 : rank === 'A' ? 55 : rank === 'B' ? 65 : 75
+    const matchCard: AcroQ = {
+      id: `af-match-${attempt}-${rank}`,
+      kind: 'acro-match',
+      prompt: 'Click an acronym then its matching expansion to clear the board.',
+      explanation: 'Acronym match: each acronym pairs with exactly one expansion. Speed and accuracy both matter.',
+      pairCount,
+      timeLimit,
+    }
+    // insert midway
+    const mid = Math.floor(mcQuestions.length / 2)
+    mcQuestions.splice(mid, 0, matchCard)
   }
-  return result
+
+  return mcQuestions
 }
+
+// ─── Game root ────────────────────────────────────────────────────────────────
 
 export default function AcroFlip() {
   const navigate = useNavigate()
@@ -379,109 +432,93 @@ export default function AcroFlip() {
   })
 
   const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect } = state
-  const [flipDone, setFlipDone] = useState(false)
+  const [matchDone, setMatchDone] = useState(false)
 
-  // reset flipDone when advancing to a new card
-  useEffect(() => { setFlipDone(false) }, [activeIndex])
+  useEffect(() => { setMatchDone(false) }, [activeIndex])
 
-  if (phase === 'menu')    return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
-  if (phase === 'failed')  return <FailedScreen actions={actions} rank={rank} />
+  if (phase === 'menu')     return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
+  if (phase === 'failed')   return <FailedScreen actions={actions} rank={rank} />
   if (phase === 'gameover') return <GameOverScreen score={state.score} rank={rank} onRestart={actions.startGame} onQuit={() => navigate('/')} />
-  if (phase === 'levelup') return <LevelUpScreen prevRank={rank} newRank={RANKS[RANKS.indexOf(rank) + 1]} onContinue={actions.proceedAfterLevelup} />
-  if (phase === 'victory') return <VictoryScreen score={state.score} flawless={state.flawless} onQuit={() => navigate('/')} />
+  if (phase === 'levelup')  return <LevelUpScreen prevRank={rank} newRank={RANKS[RANKS.indexOf(rank) + 1]} onContinue={actions.proceedAfterLevelup} />
+  if (phase === 'victory')  return <VictoryScreen score={state.score} flawless={state.flawless} onQuit={() => navigate('/')} />
 
   if (phase === 'review') {
     return (
       <ReviewScreen state={state} actions={actions}
         renderReviewCard={({ question, answerSnapshot }) => {
-          const q = question as AcroQuestion
-          if (q.kind === 'memory-flip') {
+          const q = question as AcroQ
+          if (q.kind === 'acro-match') {
             return (
               <div style={{ padding: 16, background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 6 }}>
-                <p style={{ color: 'var(--c-cyan)', fontWeight: 700, marginBottom: 8 }}>MEMORY FLIP</p>
+                <p style={{ color: 'var(--c-violet)', fontWeight: 700, marginBottom: 8 }}>ACRO MATCH</p>
                 <p style={{ color: 'var(--c-dim)', fontSize: 12 }}>{q.explanation}</p>
               </div>
             )
           }
-          return (
-            <ChoiceCard
-              question={q as MultipleChoiceQuestion}
-              snapshot={answerSnapshot as number}
-            />
-          )
+          return <ChoiceCard question={q as MultipleChoiceQuestion} snapshot={answerSnapshot as number} />
         }}
       />
     )
   }
 
-  const active = stack[activeIndex]?.question as AcroQuestion | undefined
+  const active = stack[activeIndex]?.question as AcroQ | undefined
   if (!active) return null
 
-  const isFlipCard = active.kind === 'memory-flip'
+  const isMatchCard = active.kind === 'acro-match'
 
-  const handleFlipResult = (success: boolean) => {
-    if (flipDone) return
-    setFlipDone(true)
-    actions.submitAnswer(success ? 1 : -1)
+  // domain badge for MCQ
+  const getDomainBadge = () => {
+    if (isMatchCard) return null
+    const mc = active as MultipleChoiceQuestion
+    const m = mc.prompt.match(/\*\*([^*]+)\*\*/)
+    const acroData = m ? ACRONYMS_UNIQUE.find((a) => a.acronym === m[1]) : null
+    if (!acroData) return null
+    return (
+      <div style={{ marginBottom: 6 }}>
+        <span style={{
+          fontSize: 10, letterSpacing: '0.1em', fontWeight: 700,
+          color: DOMAIN_COLORS[acroData.domain],
+          borderBottom: `1px solid ${DOMAIN_COLORS[acroData.domain]}`,
+          paddingBottom: 1, fontFamily: 'var(--font-mono)',
+        }}>{DOMAIN_LABELS[acroData.domain]}</span>
+      </div>
+    )
   }
 
   return (
     <PlayHUD state={state} actions={actions} gameName={GAME_NAME} gameId={GAME_ID}>
-      {/* Domain badge on MC questions */}
-      {!isFlipCard && (() => {
-        const mc = active as MultipleChoiceQuestion
-        const acroId = mc.prompt.match(/\*\*([^*]+)\*\*/) ?
-          mc.prompt.match(/\*\*([^*]+)\*\*/)![1] : null
-        const acroData = acroId ? ACRONYMS_UNIQUE.find(a => a.acronym === acroId) : null
-        return acroData ? (
-          <div style={{ marginBottom: 4 }}>
-            <span style={{
-              fontSize: 10, letterSpacing: '0.1em', fontWeight: 700,
-              color: DOMAIN_COLORS[acroData.domain],
-              borderBottom: `1px solid ${DOMAIN_COLORS[acroData.domain]}`,
-              paddingBottom: 1,
-            }}>
-              {DOMAIN_LABELS[acroData.domain]}
-            </span>
-          </div>
-        ) : null
-      })()}
+      {getDomainBadge()}
 
-      {/* Flip card mode */}
-      {isFlipCard && !pendingAdvance && !flipDone && (
-        <MemoryFlipQuestion onSubmit={handleFlipResult} />
-      )}
-      {isFlipCard && !pendingAdvance && flipDone && (
-        <div style={{ textAlign: 'center', padding: 32, color: 'var(--c-dim)' }}>Processing…</div>
-      )}
-
-      {/* Multiple choice mode */}
-      {!isFlipCard && !pendingAdvance && (
-        <ChoiceCard
-          question={active as MultipleChoiceQuestion}
-          onSubmit={(idx) => actions.submitAnswer(idx)}
+      {/* Match board */}
+      {isMatchCard && !pendingAdvance && !matchDone && (
+        <MatchQuestion
+          pairCount={(active as { pairCount: number }).pairCount}
+          timeLimit={(active as { timeLimit: number }).timeLimit}
+          onSubmit={(ok) => { setMatchDone(true); actions.submitAnswer(ok ? 1 : -1) }}
         />
       )}
+      {isMatchCard && !pendingAdvance && matchDone && (
+        <div style={{ textAlign: 'center', padding: 32, color: 'var(--c-dim)' }}>Checking…</div>
+      )}
 
+      {/* MCQ */}
+      {!isMatchCard && !pendingAdvance && (
+        <ChoiceCard question={active as MultipleChoiceQuestion} onSubmit={(idx) => actions.submitAnswer(idx)} />
+      )}
+
+      {/* Explanation banner */}
       {pendingAdvance && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {!isFlipCard && (
-            <ChoiceCard
-              question={active as MultipleChoiceQuestion}
-              snapshot={lastAnswer as number}
-            />
+          {!isMatchCard && (
+            <ChoiceCard question={active as MultipleChoiceQuestion} snapshot={lastAnswer as number} />
           )}
-          {isFlipCard && (
+          {isMatchCard && (
             <div style={{ padding: 16, background: 'var(--c-surface)', border: '1px solid var(--c-border)', borderRadius: 6 }}>
-              <p style={{ color: 'var(--c-cyan)', fontWeight: 700, marginBottom: 6 }}>MEMORY FLIP</p>
+              <p style={{ color: 'var(--c-violet)', fontWeight: 700, marginBottom: 6, fontFamily: 'var(--font-mono)' }}>ACRO MATCH</p>
               <p style={{ color: 'var(--c-dim)', fontSize: 12 }}>{active.explanation}</p>
             </div>
           )}
-          <ExplainBanner
-            correct={lastCorrect}
-            explanation={active.explanation}
-            onAdvance={actions.advanceCard}
-          />
+          <ExplainBanner correct={lastCorrect} explanation={active.explanation} onAdvance={actions.advanceCard} />
         </div>
       )}
     </PlayHUD>
