@@ -1,0 +1,8 @@
+import{c as e,s as t}from"./index-Bf1xZL32.js";var n=e(t(),1);function r(e,t,r){let i=(0,n.useRef)(null),a=(0,n.useRef)(null),o=(0,n.useRef)(null),s=(0,n.useCallback)((e,t)=>{i.current=e,a.current=t.currentTarget;let n=a.current,r=n.getBoundingClientRect(),s=n.cloneNode(!0);s.style.cssText=`
+      position:fixed; left:${r.left}px; top:${r.top}px;
+      width:${r.width}px; height:${r.height}px;
+      opacity:0.75; pointer-events:none; z-index:9999;
+      border:1px dashed var(--c-cyan); background:rgba(34,211,238,0.08);
+      border-radius:6px; box-shadow:0 4px 20px rgba(0,0,0,0.4);
+      transform:scale(1.02);
+    `,document.body.appendChild(s),o.current=s},[]),c=(0,n.useCallback)(e=>{if(i.current===null||!o.current)return;e.preventDefault();let t=e.touches[0],n=a.current.getBoundingClientRect();o.current.style.left=`${t.clientX-n.width/2}px`,o.current.style.top=`${t.clientY-n.height/2}px`,o.current.style.display=`none`;let s=document.elementFromPoint(t.clientX,t.clientY);o.current.style.display=``;let c=s;for(;c&&!c.hasAttribute(`data-drag-index`);)c=c.parentElement;if(c){let e=parseInt(c.getAttribute(`data-drag-index`),10);isNaN(e)||r(e)}},[r]),l=(0,n.useCallback)(n=>{if(o.current&&=(document.body.removeChild(o.current),null),i.current===null)return;let a=n.changedTouches[0],s=document.elementFromPoint(a.clientX,a.clientY);for(;s&&!s.hasAttribute(`data-drag-index`);)s=s.parentElement;if(s){let n=parseInt(s.getAttribute(`data-drag-index`),10);if(!isNaN(n)&&n!==i.current){let r=[...e],[a]=r.splice(i.current,1);r.splice(n,0,a),t(r)}}i.current=null,r(null)},[e,t,r]);return{dragProps:(0,n.useCallback)(e=>({"data-drag-index":e,onTouchStart:t=>s(e,t),onTouchMove:c,onTouchEnd:l}),[s,c,l])}}export{r as t};
