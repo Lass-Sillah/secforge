@@ -35,19 +35,88 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
+// ─── Letter-matched distractor engine ─────────────────────────────────────────
+// Every wrong option starts with the exact same letters as the correct answer,
+// so users can't spot it by letter-scanning alone.
+
+const WORD_BANK: Record<string, string[]> = {
+  A: ['Access','Advanced','Alert','Analysis','Application','Authentication','Authorization','Automated','Adaptive','Agent','Anchor','Attribute','Audit'],
+  B: ['Based','Binary','Block','Boundary','Bridge','Broadcast','Buffer','Business','Baseline','Behavioral'],
+  C: ['Cache','Certificate','Channel','Client','Cloud','Code','Command','Communication','Configuration','Control','Credential','Cryptographic','Container','Compliance'],
+  D: ['Data','Detection','Digital','Directory','Distributed','Domain','Dynamic','Defense','Delegation','Deployment'],
+  E: ['Encryption','Endpoint','Engine','Entry','Event','Exchange','Execution','Extension','External','Evaluation','Enforcement'],
+  F: ['File','Filter','Forwarding','Framework','Function','Federation','Firewall','Forensic'],
+  G: ['Gateway','Group','Guard','Global'],
+  H: ['Hardware','Hash','Host','Hardening','Hybrid'],
+  I: ['Infrastructure','Inspection','Integration','Interface','Internal','Identity','Intrusion','Incident'],
+  J: ['Journal','Junction'],
+  K: ['Key','Kernel','Knowledge'],
+  L: ['Layer','Legacy','Link','Local','Log','Lateral'],
+  M: ['Management','Memory','Message','Module','Monitor','Multi','Mutual','Monitoring'],
+  N: ['Network','Node','Notification','Namespace','Negotiation'],
+  O: ['Object','Open','Operation','Output','Orchestration','Obfuscation','Offline'],
+  P: ['Package','Packet','Password','Path','Policy','Port','Protocol','Proxy','Public','Permission','Privilege','Platform'],
+  Q: ['Query','Queue'],
+  R: ['Real-time','Redundant','Remote','Resource','Response','Reverse','Role','Routing','Rule','Recovery','Remediation'],
+  S: ['Secure','Security','Service','Session','Signature','Single','Software','Source','Standard','Storage','System','Secret','Sandbox'],
+  T: ['Token','Transport','Threat','Trust','Type','Transfer'],
+  U: ['Update','User','Unified','Unauthenticated'],
+  V: ['Validation','Vector','Virtual','Vulnerability','Verification'],
+  W: ['Web','Wireless','Workstation','Whitelist'],
+  X: ['eXtended','eXchange','eXecution'],
+  Y: ['Yield'],
+  Z: ['Zone','Zero-day'],
+}
+
+function buildLetterMatchedDistractors(acronym: string, correctExpansion: string): string[] {
+  const letters = acronym.replace(/[^A-Z]/gi, '').toUpperCase().split('')
+  const results: string[] = []
+  let attempts = 0
+
+  while (results.length < 3 && attempts < 60) {
+    attempts++
+    const words = letters.map((l) => {
+      const bank = WORD_BANK[l] ?? ['Unknown']
+      return bank[Math.floor(Math.random() * bank.length)]
+    })
+    const candidate = words.join(' ')
+    if (candidate !== correctExpansion && !results.includes(candidate)) {
+      results.push(candidate)
+    }
+  }
+
+  // Fallback: if we couldn't generate enough, use other real expansions from the pool
+  if (results.length < 3) {
+    const fallbacks = shuffle(ACRONYMS_UNIQUE)
+      .filter((a) => a.expansion !== correctExpansion)
+      .slice(0, 3 - results.length)
+      .map((a) => a.expansion)
+    results.push(...fallbacks)
+  }
+
+  return results
+}
+
 // ─── Multiple-choice fill-in-the-blank ────────────────────────────────────────
 
 function makeMultipleChoiceQ(index: number, mode: 'expansion' | 'acronym'): MultipleChoiceQuestion {
   const pool = shuffle([...ACRONYMS_UNIQUE])
   const correct = pool[0]
-  const distractors = pool.slice(1, 4)
-  const options =
-    mode === 'expansion'
-      ? shuffle([correct.expansion, ...distractors.map((d) => d.expansion)])
-      : shuffle([correct.acronym, ...distractors.map((d) => d.acronym)])
-  const correctIndex = mode === 'expansion'
-    ? options.indexOf(correct.expansion)
-    : options.indexOf(correct.acronym)
+
+  let options: string[]
+  let correctIndex: number
+
+  if (mode === 'expansion') {
+    // All distractors start with the same letters — impossible to spot by scanning
+    const distractors = buildLetterMatchedDistractors(correct.acronym, correct.expansion)
+    options = shuffle([correct.expansion, ...distractors])
+    correctIndex = options.indexOf(correct.expansion)
+  } else {
+    // Give 4 real acronyms — all plausible, user must know the exact meaning
+    const distractors = pool.slice(1, 4).map((d) => d.acronym)
+    options = shuffle([correct.acronym, ...distractors])
+    correctIndex = options.indexOf(correct.acronym)
+  }
 
   return {
     id: `af-mc-${mode}-${index}`,
