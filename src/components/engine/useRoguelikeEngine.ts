@@ -29,6 +29,7 @@ function prepareStack(questions: Question[]): Question[] {
     if (q.kind === 'multiple-choice') return shuffleOptions(q)
     if (q.kind === 'drag-order') return { ...q, shuffled: shuffle(q.items) }
     if (q.kind === 'drag-ruleset') return { ...q, shuffledRules: shuffle(q.rules) }
+    if (q.kind === 'drag-match') return { ...q, pairs: shuffle([...q.pairs]) }
     return q
   })
 }
@@ -200,7 +201,7 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   }
 
   function submitAnswer(answer: unknown) {
-    if (phase !== 'playing' || isReviewing || pendingAdvance) return
+    if (phase !== 'playing' || isReviewing || pendingAdvance || timedOut) return
     clearTimer()
 
     const current = stack[activeIndex].question
@@ -226,6 +227,8 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
     } else {
       setCombo(0)
       setFlawless(false)
+      // Deduct life immediately so hearts update the moment the wrong answer is shown
+      setLives((prev) => prev - 1)
     }
   }
 
@@ -233,9 +236,8 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
   function advanceCard() {
     setPendingAdvance(false)
     if (!lastCorrect) {
-      const newLives = lives - 1
-      setLives(newLives)
-      if (newLives <= 0) {
+      // Lives were already deducted in submitAnswer — just check if we've hit 0
+      if (lives <= 0) {
         recordGameResult(config.gameId as GameId, rank, score, flawless)
         setPhase('gameover')
         return

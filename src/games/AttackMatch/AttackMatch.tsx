@@ -57,6 +57,8 @@ function MatchGame({
 }) {
   const [selected, setSelected] = useState<string | null>(null) // selected name
   const [assignments, setAssignments] = useState<Record<string, string>>({})
+  // Descriptions shuffled independently from names so position gives no hint
+  const [descPool] = useState(() => shuffle(question.pairs.map((p) => p.match)))
   const correctMap: Record<string, string> = {}
   question.pairs.forEach((p) => { correctMap[p.label] = p.match })
 
@@ -85,8 +87,8 @@ function MatchGame({
     setAssignments(next)
   }
 
-  // Descriptions not yet assigned
-  const unassignedDescs = question.pairs.map((p) => p.match).filter((m) => !Object.values(assignments).includes(m))
+  // Descriptions not yet assigned — use independently shuffled order so position gives no hint
+  const unassignedDescs = descPool.filter((m) => !Object.values(assignments).includes(m))
   const isReview = !!snapshot
 
   return (
