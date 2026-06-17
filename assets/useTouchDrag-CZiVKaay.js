@@ -1,4 +1,4 @@
-import{c as e,s as t}from"./index-jtKgPq-5.js";var n=e(t(),1);function r(e,t,r){let i=(0,n.useRef)(null),a=(0,n.useRef)(null),o=(0,n.useRef)(null),s=(0,n.useCallback)((e,t)=>{i.current=e,a.current=t.currentTarget;let n=a.current,r=n.getBoundingClientRect(),s=n.cloneNode(!0);s.style.cssText=`
+import{c as e,s as t}from"./index-DTUJiIp1.js";var n=e(t(),1);function r(e,t,r){let i=(0,n.useRef)(null),a=(0,n.useRef)(null),o=(0,n.useRef)(null),s=(0,n.useCallback)((e,t)=>{i.current=e,a.current=t.currentTarget;let n=a.current,r=n.getBoundingClientRect(),s=n.cloneNode(!0);s.style.cssText=`
       position:fixed; left:${r.left}px; top:${r.top}px;
       width:${r.width}px; height:${r.height}px;
       opacity:0.75; pointer-events:none; z-index:9999;
