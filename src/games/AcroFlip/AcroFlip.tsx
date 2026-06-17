@@ -453,8 +453,8 @@ function generateAcroStack(rank: Rank, attempt: number): AcroQ[] {
   const mcQuestions = generateStack(rank, attempt) as AcroQ[]
 
   // Insert a match board at Rank C and above (every other card)
-  if (rank >= 'C') {
-    const pairCount = rank >= 'A' ? 8 : 6
+  if (RANKS.indexOf(rank) >= 2) {
+    const pairCount = RANKS.indexOf(rank) >= 4 ? 8 : 6
     const timeLimit = rank === 'S' ? 45 : rank === 'A' ? 55 : rank === 'B' ? 65 : 75
     const matchCard: AcroQ = {
       id: `af-match-${attempt}-${rank}`,

@@ -21,7 +21,9 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function generateStack(rank: Rank): ClickMultiQuestion[] {
-  return shuffle([...HARDENING_SCENARIOS]).slice(0, STACK[rank])
+  return shuffle([...HARDENING_SCENARIOS]).slice(0, STACK[rank]).map((s) => ({
+    ...s, items: shuffle([...s.items]),
+  }))
 }
 
 function HardenCard({
