@@ -144,7 +144,7 @@ export default function IncidentOrder() {
     generateStack: (rank) => generateStack(rank),
     timerByRank: TIMER as never, stackSizeByRank: STACK as never,
   })
-  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect } = state
+  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect, lives } = state
 
   const getDescs = (q: DragOrderQuestion) => q.id.includes('ir') ? IR_DESCRIPTIONS : OOV_DESCRIPTIONS
 
@@ -175,7 +175,7 @@ export default function IncidentOrder() {
       {active && pendingAdvance && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <OrderCard question={active} snapshot={lastAnswer as string[]} descriptions={getDescs(active)} />
-          <ExplainBanner correct={lastCorrect} explanation={active.explanation} onAdvance={actions.advanceCard} />
+          <ExplainBanner correct={lastCorrect} explanation={active.explanation} onAdvance={actions.advanceCard} onRetry={lives > 0 ? actions.retryCard : undefined} />
         </div>
       )}
     </PlayHUD>

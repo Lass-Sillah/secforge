@@ -58,7 +58,8 @@ export interface EngineState {
 export interface EngineActions {
   startGame: () => void
   submitAnswer: (answer: unknown) => void
-  advanceCard: () => void            // call after showing explanation
+  advanceCard: () => void            // call after correct answer explanation
+  retryCard: () => void              // call after wrong answer — resets to answerable state
   enterReview: () => void
   exitReview: () => void
   setReviewIndex: (i: number) => void
@@ -269,6 +270,11 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
     setPhase('playing')
   }
 
+  // Reset current card to answerable state after a wrong answer
+  function retryCard() {
+    setPendingAdvance(false)
+  }
+
   function retryStack() {
     const newAttempt = attempt + 1
     setStack(buildSameStack())
@@ -295,7 +301,7 @@ export function useRoguelikeEngine(config: EngineConfig): [EngineState, EngineAc
 
   return [
     { phase, rank, rankIndex: rankIdx, stack, activeIndex, reviewIndex, combo, score, timeLeft, maxTime, flawless, attempt, isReviewing, pendingAdvance, lastAnswer, lastCorrect, lives, timedOut },
-    { startGame, submitAnswer, advanceCard, enterReview, exitReview, setReviewIndex, retryStack, quit, proceedAfterLevelup },
+    { startGame, submitAnswer, advanceCard, retryCard, enterReview, exitReview, setReviewIndex, retryStack, quit, proceedAfterLevelup },
   ]
 }
 

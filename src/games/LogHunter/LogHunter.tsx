@@ -47,13 +47,14 @@ function colorizeLog(line: string): React.ReactNode {
 }
 
 function LogCard({
-  question, onAnswer, submittedIndex, showExplain, onAdvance,
+  question, onAnswer, submittedIndex, showExplain, onAdvance, onRetry,
 }: {
   question: ClickSuspiciousQuestion
   onAnswer?: (i: number) => void
   submittedIndex?: number | null
   showExplain?: boolean
   onAdvance?: () => void
+  onRetry?: () => void
 }) {
   const [hover, setHover] = useState<number | null>(null)
   const isReview = submittedIndex != null
@@ -123,6 +124,7 @@ function LogCard({
           correct={submittedIndex === question.suspiciousIndex}
           explanation={`IoC: ${question.iocType.replace(/-/g, ' ').toUpperCase()}\n\n${question.explanation}`}
           onAdvance={onAdvance!}
+          onRetry={onRetry}
           label={question.iocType.replace(/-/g, ' ').toUpperCase()}
         />
       )}
@@ -138,7 +140,7 @@ export default function LogHunter() {
     generateStack: (rank) => generateStack(rank),
     timerByRank: TIMER as never, stackSizeByRank: STACK as never,
   })
-  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer } = state
+  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lives } = state
 
   if (phase === 'menu')    return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
   if (phase === 'failed')  return <FailedScreen actions={actions} rank={rank} />
@@ -166,6 +168,7 @@ export default function LogHunter() {
           submittedIndex={pendingAdvance ? lastAnswer as number : null}
           showExplain={pendingAdvance}
           onAdvance={actions.advanceCard}
+          onRetry={lives > 0 ? actions.retryCard : undefined}
         />
       )}
     </PlayHUD>

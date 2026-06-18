@@ -22,12 +22,14 @@ function MCQuestion({
   submittedIndex,
   showExplain,
   onAdvance,
+  onRetry,
 }: {
   question: MultipleChoiceQuestion
   onAnswer?: (i: number) => void
   submittedIndex?: number | null
   showExplain?: boolean
   onAdvance?: () => void
+  onRetry?: () => void
 }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -99,6 +101,7 @@ function MCQuestion({
           correct={submittedIndex === question.correctIndex}
           explanation={question.explanation}
           onAdvance={onAdvance!}
+          onRetry={onRetry}
         />
       )}
     </div>
@@ -115,7 +118,7 @@ export default function PortMaster() {
     stackSizeByRank: STACK as never,
   })
 
-  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer } = state
+  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lives } = state
 
   if (phase === 'menu')    return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
   if (phase === 'failed')  return <FailedScreen actions={actions} rank={rank} />
@@ -144,6 +147,7 @@ export default function PortMaster() {
           submittedIndex={pendingAdvance ? lastAnswer as number : null}
           showExplain={pendingAdvance}
           onAdvance={actions.advanceCard}
+          onRetry={lives > 0 ? actions.retryCard : undefined}
         />
       )}
     </PlayHUD>

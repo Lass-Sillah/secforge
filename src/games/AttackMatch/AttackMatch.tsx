@@ -221,7 +221,7 @@ export default function AttackMatch() {
     generateStack: (rank) => generateStack(rank),
     timerByRank: TIMER as never, stackSizeByRank: STACK as never,
   })
-  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect } = state
+  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect, lives } = state
 
   if (phase === 'menu')    return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
   if (phase === 'failed')  return <FailedScreen actions={actions} rank={rank} />
@@ -253,6 +253,7 @@ export default function AttackMatch() {
             correct={lastCorrect}
             explanation={active.explanation}
             onAdvance={actions.advanceCard}
+            onRetry={lives > 0 ? actions.retryCard : undefined}
           />
         </div>
       )}

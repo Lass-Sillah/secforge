@@ -485,7 +485,7 @@ export default function AcroFlip() {
     stackSizeByRank: STACK as never,
   })
 
-  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect } = state
+  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect, lives } = state
   const [matchDone, setMatchDone] = useState(false)
 
   useEffect(() => { setMatchDone(false) }, [activeIndex])
@@ -572,7 +572,7 @@ export default function AcroFlip() {
               <p style={{ color: 'var(--c-dim)', fontSize: 12 }}>{active.explanation}</p>
             </div>
           )}
-          <ExplainBanner correct={lastCorrect} explanation={active.explanation} onAdvance={actions.advanceCard} />
+          <ExplainBanner correct={lastCorrect} explanation={active.explanation} onAdvance={actions.advanceCard} onRetry={lives > 0 ? actions.retryCard : undefined} />
         </div>
       )}
     </PlayHUD>

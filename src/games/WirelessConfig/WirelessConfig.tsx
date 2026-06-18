@@ -81,7 +81,7 @@ export default function WirelessConfig() {
     generateStack: (rank) => generateStack(rank),
     timerByRank: TIMER as never, stackSizeByRank: STACK as never,
   })
-  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect } = state
+  const { phase, rank, stack, activeIndex, pendingAdvance, lastAnswer, lastCorrect, lives } = state
 
   if (phase === 'menu')    return <MenuScreen gameName={GAME_NAME} gameId={GAME_ID} description={DESC} bestRank={record?.bestRank ?? null} bestScore={record?.bestScore ?? 0} onStart={actions.startGame} />
   if (phase === 'failed')  return <FailedScreen actions={actions} rank={rank} />
@@ -109,7 +109,7 @@ export default function WirelessConfig() {
       {active && pendingAdvance && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <WifiQuestion question={active} submittedIndex={lastAnswer as number} />
-          <ExplainBanner correct={lastCorrect} explanation={active.explanation} onAdvance={actions.advanceCard} />
+          <ExplainBanner correct={lastCorrect} explanation={active.explanation} onAdvance={actions.advanceCard} onRetry={lives > 0 ? actions.retryCard : undefined} />
         </div>
       )}
     </PlayHUD>

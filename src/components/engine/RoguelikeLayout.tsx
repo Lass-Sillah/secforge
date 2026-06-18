@@ -15,13 +15,16 @@ export function ExplainBanner({
   correct,
   explanation,
   onAdvance,
+  onRetry,
   label,
 }: {
   correct: boolean
   explanation: string
   onAdvance: () => void
+  onRetry?: () => void
   label?: string
 }) {
+  const canRetry = !correct && !!onRetry
   return (
     <div
       className="fade-in"
@@ -48,9 +51,9 @@ export function ExplainBanner({
       <button
         className={`btn-neon ${correct ? 'btn-green' : 'btn-pink'}`}
         style={{ alignSelf: 'flex-end', padding: '8px 28px', fontSize: 13 }}
-        onClick={onAdvance}
+        onClick={canRetry ? onRetry : onAdvance}
       >
-        {correct ? 'NEXT CARD →' : 'SEE RESULTS →'}
+        {correct ? 'NEXT CARD →' : canRetry ? '↩ TRY AGAIN' : 'GAME OVER →'}
       </button>
     </div>
   )
